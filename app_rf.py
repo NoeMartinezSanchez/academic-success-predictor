@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 
 import pickle
 import os
+from sklearn.compose import ColumnTransformer
 
 # Configuración de la página
 st.set_page_config(
@@ -303,18 +304,29 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# Cargar modelo Random Forest desde partes
 @st.cache_resource
 def cargar_modelo():
     """
-    Función para cargar el modelo desde las partes divididas
+    Función para cargar el modelo con manejo de compatibilidad
     """
     try:
-        # Primero verificar si necesitamos unir las partes
+        # Primero registrar la clase personalizada si es necesario
+        try:
+            from sklearn.compose._column_transformer import _RemainderColsList
+        except ImportError:
+            # Crear una clase dummy para compatibilidad
+            class _RemainderColsList(list):
+                pass
+            
+            # Registrar la clase para pickle
+            import sys
+            module = sys.modules['sklearn.compose._column_transformer']
+            setattr(module, '_RemainderColsList', _RemainderColsList)
+        
+        # Unir partes si es necesario
         if not os.path.exists('modelo_exito_academico_RF_optimizado.pkl'):
             st.info("🔗 Uniendo partes del modelo...")
             
-            # Determinar cuántas partes hay
             partes = 0
             while os.path.exists(f'modelo_exito_academico_RF_optimizado.pkl.part{partes + 1}'):
                 partes += 1
@@ -323,7 +335,6 @@ def cargar_modelo():
                 st.error("❌ No se encontraron partes del modelo")
                 return None, None
             
-            # Unir las partes
             with open('modelo_exito_academico_RF_optimizado.pkl', 'wb') as archivo_final:
                 for i in range(1, partes + 1):
                     nombre_parte = f'modelo_exito_academico_RF_optimizado.pkl.part{i}'
@@ -336,56 +347,21 @@ def cargar_modelo():
                         st.error(f"❌ Error cargando parte {i}: {e}")
                         return None, None
         
-        # Ahora cargar el modelo unido
-        pipeline = joblib.load('modelo_exito_academico_RF_optimizado.pkl')
+        # Cargar el modelo
+        with open('modelo_exito_academico_RF_optimizado.pkl', 'rb') as f:
+            pipeline = pickle.load(f)
+        
+        # Cargar metadata
         metadata = joblib.load('modelo_metadatos.pkl')
         
         st.success("✅ Modelo cargado exitosamente!")
         return pipeline, metadata
         
-    except FileNotFoundError:
-        st.error("❌ No se pudo encontrar los archivos del modelo.")
-        return None, None
     except Exception as e:
         st.error(f"❌ Error al cargar el modelo: {str(e)}")
+        st.info("💡 Solución: Verifica que scikit-learn esté en la misma versión que usaste para entrenar")
         return None, None
-
-# Versión alternativa si prefieres usar pickle en lugar de joblib
-@st.cache_resource
-def cargar_modelo_pickle():
-    """
-    Alternativa usando pickle en lugar de joblib
-    """
-    try:
-        # Unir partes si es necesario (igual que arriba)
-        if not os.path.exists('modelo_exito_academico_RF_optimizado.pkl'):
-            partes = 0
-            while os.path.exists(f'modelo_exito_academico_RF_optimizado.pkl.part{partes + 1}'):
-                partes += 1
-            
-            if partes == 0:
-                st.error("❌ No se encontraron partes del modelo")
-                return None, None
-            
-            with open('modelo_exito_academico_RF_optimizado.pkl', 'wb') as archivo_final:
-                for i in range(1, partes + 1):
-                    with open(f'modelo_exito_academico_RF_optimizado.pkl.part{i}', 'rb') as archivo_parte:
-                        archivo_final.write(archivo_parte.read())
         
-        # Cargar con pickle
-        with open('modelo_exito_academico_RF_optimizado.pkl', 'rb') as f:
-            pipeline = pickle.load(f)
-        
-        # Cargar metadata (asegúrate de que este archivo también existe)
-        with open('modelo_metadatos.pkl', 'rb') as f:
-            metadata = pickle.load(f)
-        
-        return pipeline, metadata
-        
-    except Exception as e:
-        st.error(f"❌ Error: {e}")
-        return None, None
-
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {
     'si_no': {'Sí': 1, 'No': 0},

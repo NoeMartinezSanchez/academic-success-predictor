@@ -410,8 +410,7 @@ def cargar_modelo():
         st.info("💡 Solución: Verifica que scikit-learn esté en la misma versión que usaste para entrenar")
         return None, None
 
-diagnosticar_modelo(pipeline)
-        
+   
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {
     'si_no': {'Sí': 1, 'No': 0},
@@ -749,8 +748,10 @@ def generar_recomendaciones_rf(probabilidad, datos):
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo()
+    
     if pipeline is None:
         return
+    diagnosticar_modelo(pipeline)
     
     # Mostrar información del modelo cargado
     if metadata:

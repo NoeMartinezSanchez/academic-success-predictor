@@ -12,6 +12,54 @@ import pickle
 import os
 from sklearn.compose import ColumnTransformer
 
+def diagnosticar_modelo(pipeline):
+    """
+    Función para entender la estructura de tu modelo
+    """
+    st.subheader("🔍 Diagnóstico del Modelo")
+    
+    if isinstance(pipeline, np.ndarray):
+        st.write("📦 Es un array de NumPy")
+        st.write(f"   Forma: {pipeline.shape}")
+        st.write(f"   Tipo de datos: {pipeline.dtype}")
+        st.write(f"   Número de elementos: {len(pipeline)}")
+        
+        for i, item in enumerate(pipeline):
+            st.write(f"\n   Elemento {i}:")
+            if item is None:
+                st.write("      None")
+            else:
+                st.write(f"      Tipo: {type(item).__name__}")
+                
+                # Verificar si es un modelo de sklearn
+                if hasattr(item, 'predict'):
+                    st.write("      ✅ Tiene método predict()")
+                if hasattr(item, 'predict_proba'):
+                    st.write("      ✅ Tiene método predict_proba()")
+                if hasattr(item, 'classes_'):
+                    st.write(f"      Classes: {item.classes_}")
+                
+                # Verificar si es un pipeline
+                if hasattr(item, 'steps'):
+                    st.write(f"      Es un Pipeline con {len(item.steps)} steps")
+                    for step_name, step_model in item.steps:
+                        st.write(f"        Step '{step_name}': {type(step_model).__name__}")
+    
+    elif hasattr(pipeline, 'predict'):
+        st.write("📦 Es un modelo de machine learning")
+        st.write(f"   Tipo: {type(pipeline).__name__}")
+        if hasattr(pipeline, 'predict_proba'):
+            st.write("   ✅ Tiene predict_proba")
+        if hasattr(pipeline, 'classes_'):
+            st.write(f"   Classes: {pipeline.classes_}")
+    
+    else:
+        st.write("❌ Tipo de modelo no reconocido")
+
+# Usar la función de diagnóstico
+# diagnosticar_modelo(pipeline)
+
+
 # Configuración de la página
 st.set_page_config(
     page_title="PREDICTOR DE ÉXITO ACADÉMICO EN EDUCACIÓN EN LINEA",
@@ -361,6 +409,8 @@ def cargar_modelo():
         st.error(f"❌ Error al cargar el modelo: {str(e)}")
         st.info("💡 Solución: Verifica que scikit-learn esté en la misma versión que usaste para entrenar")
         return None, None
+
+diagnosticar_modelo(pipeline)
         
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {

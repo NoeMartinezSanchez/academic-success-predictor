@@ -8,6 +8,9 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 
+import pickle
+import os
+
 # Configuración de la página
 st.set_page_config(
     page_title="PREDICTOR DE ÉXITO ACADÉMICO EN EDUCACIÓN EN LINEA",
@@ -300,18 +303,87 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# Cargar modelo Random Forest
+# Cargar modelo Random Forest desde partes
 @st.cache_resource
 def cargar_modelo():
+    """
+    Función para cargar el modelo desde las partes divididas
+    """
     try:
+        # Primero verificar si necesitamos unir las partes
+        if not os.path.exists('modelo_exito_academico_RF_optimizado.pkl'):
+            st.info("🔗 Uniendo partes del modelo...")
+            
+            # Determinar cuántas partes hay
+            partes = 0
+            while os.path.exists(f'modelo_exito_academico_RF_optimizado.pkl.part{partes + 1}'):
+                partes += 1
+            
+            if partes == 0:
+                st.error("❌ No se encontraron partes del modelo")
+                return None, None
+            
+            # Unir las partes
+            with open('modelo_exito_academico_RF_optimizado.pkl', 'wb') as archivo_final:
+                for i in range(1, partes + 1):
+                    nombre_parte = f'modelo_exito_academico_RF_optimizado.pkl.part{i}'
+                    try:
+                        with open(nombre_parte, 'rb') as archivo_parte:
+                            datos = archivo_parte.read()
+                            archivo_final.write(datos)
+                        st.write(f"✅ Parte {i} de {partes} cargada")
+                    except Exception as e:
+                        st.error(f"❌ Error cargando parte {i}: {e}")
+                        return None, None
+        
+        # Ahora cargar el modelo unido
         pipeline = joblib.load('modelo_exito_academico_RF_optimizado.pkl')
         metadata = joblib.load('modelo_metadatos.pkl')
+        
+        st.success("✅ Modelo cargado exitosamente!")
         return pipeline, metadata
+        
     except FileNotFoundError:
-        st.error("❌ No se pudo cargar el modelo Random Forest. Verifica que los archivos existen.")
+        st.error("❌ No se pudo encontrar los archivos del modelo.")
         return None, None
     except Exception as e:
         st.error(f"❌ Error al cargar el modelo: {str(e)}")
+        return None, None
+
+# Versión alternativa si prefieres usar pickle en lugar de joblib
+@st.cache_resource
+def cargar_modelo_pickle():
+    """
+    Alternativa usando pickle en lugar de joblib
+    """
+    try:
+        # Unir partes si es necesario (igual que arriba)
+        if not os.path.exists('modelo_exito_academico_RF_optimizado.pkl'):
+            partes = 0
+            while os.path.exists(f'modelo_exito_academico_RF_optimizado.pkl.part{partes + 1}'):
+                partes += 1
+            
+            if partes == 0:
+                st.error("❌ No se encontraron partes del modelo")
+                return None, None
+            
+            with open('modelo_exito_academico_RF_optimizado.pkl', 'wb') as archivo_final:
+                for i in range(1, partes + 1):
+                    with open(f'modelo_exito_academico_RF_optimizado.pkl.part{i}', 'rb') as archivo_parte:
+                        archivo_final.write(archivo_parte.read())
+        
+        # Cargar con pickle
+        with open('modelo_exito_academico_RF_optimizado.pkl', 'rb') as f:
+            pipeline = pickle.load(f)
+        
+        # Cargar metadata (asegúrate de que este archivo también existe)
+        with open('modelo_metadatos.pkl', 'rb') as f:
+            metadata = pickle.load(f)
+        
+        return pipeline, metadata
+        
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
         return None, None
 
 # Mapeos para las variables (iguales que antes)

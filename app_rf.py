@@ -687,7 +687,7 @@ def generar_recomendaciones_rf(probabilidad, datos):
 
 def main():
     """Función principal"""
-    pipeline, metadata = cargar_modelo()
+    pipeline, metadata = cargar_modelo_desde_drive()
     
     if pipeline is None:
         return

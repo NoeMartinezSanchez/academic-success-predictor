@@ -310,28 +310,46 @@ st.markdown("""
 @st.cache_resource
 def cargar_modelo_desde_drive():
     """
-    Carga el modelo desde Google Drive
+    Versión alternativa más robusta
     """
     try:
-        # FILE ID de tu archivo en Google Drive - DEBE ESTAR ENTRE COMILLAS
-        FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"  # ✅ CON COMILLAS
+        FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"
+        nombre_archivo = "modelo_exito_academico_RF_optimizado.pkl"
         
-        # Descargar el modelo
-        archivo_modelo = descargar_modelo_drive(FILE_ID, "modelo_exito_academico_RF_optimizado.pkl")
-        
-        if archivo_modelo is None:
-            return None, None
+        # Verificar si ya existe
+        if os.path.exists(nombre_archivo):
+            st.sidebar.info("✅ Usando archivo existente")
+        else:
+            st.sidebar.info("📥 Descargando desde Google Drive...")
+            
+            # URL de descarga
+            url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
+            
+            # Descargar con timeout
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+            
+            # Guardar archivo
+            with open(nombre_archivo, 'wb') as f:
+                f.write(response.content)
+            
+            st.sidebar.success("✅ Descarga completada")
         
         # Cargar el modelo
-        with open(archivo_modelo, 'rb') as f:
+        with open(nombre_archivo, 'rb') as f:
             modelo = pickle.load(f)
         
-        return modelo, {}  # Retornar metadata vacío por ahora
+        return modelo, {}
         
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error de conexión: {e}")
+    except pickle.UnpicklingError as e:
+        st.error(f"❌ Error cargando el archivo pickle: {e}")
     except Exception as e:
-        st.error(f"❌ Error cargando modelo: {e}")
-        return None, None
-
+        st.error(f"❌ Error inesperado: {e}")
+    
+    return None, None
+    
 
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {

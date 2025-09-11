@@ -12,6 +12,7 @@ import pickle
 import os
 from sklearn.compose import ColumnTransformer
 import gdown
+import requests
 
 
 

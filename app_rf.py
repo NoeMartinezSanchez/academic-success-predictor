@@ -14,41 +14,6 @@ from sklearn.compose import ColumnTransformer
 import gdown
 import requests
 
-def verificar_descarga():
-    """
-    Función temporal para diagnosticar problemas de descarga
-    """
-    st.sidebar.subheader("🔍 Diagnóstico de Descarga")
-    
-    FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"
-    url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
-    
-    try:
-        # Probando la conexión
-        st.sidebar.write("🔗 Probando conexión...")
-        response = requests.head(url, timeout=10)
-        st.sidebar.write(f"📡 Status: {response.status_code}")
-        
-        # Descargar una pequeña parte para verificar
-        st.sidebar.write("📦 Probando descarga...")
-        response = requests.get(url, stream=True, timeout=30)
-        contenido = response.content[:500]  # Primeros 500 bytes
-        
-        st.sidebar.write(f"📊 Tamaño: {len(response.content) / 1024 / 1024:.2f} MB")
-        st.sidebar.write(f"🔍 Primeros bytes: {contenido}")
-        
-        # Guardar temporalmente para análisis
-        with open("debug_download.bin", 'wb') as f:
-            f.write(contenido)
-            
-        st.sidebar.success("✅ Diagnóstico completado")
-        
-    except Exception as e:
-        st.sidebar.error(f"❌ Error en diagnóstico: {e}")
-
-# Llamar esta función temporalmente en main() si necesitas diagnosticar
-# verificar_descarga()
-
 # Configuración de la página
 st.set_page_config(
     page_title="PREDICTOR DE ÉXITO ACADÉMICO EN EDUCACIÓN EN LINEA",
@@ -341,74 +306,47 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
+# FUNCIÓN ESPECÍFICA PARA STREAMLIT
 @st.cache_resource
-def cargar_modelo_desde_drive():
+def cargar_modelo_desde_partes():
     """
-    Versión que maneja la advertencia de virus de Google Drive
+    Función OPTIMIZADA para Streamlit Cloud
     """
     try:
-        FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"
-        nombre_archivo = "modelo_exito_academico_RF_optimizado.pkl"
+        # Buscar partes automáticamente
+        partes = []
+        for i in range(1, 20):  # Buscar hasta 20 partes
+            if os.path.exists(f"modelo_parte_{i}.pkl"):
+                partes.append(i)
         
-        # Verificar si ya existe
-        if os.path.exists(nombre_archivo):
-            st.sidebar.info("✅ Usando archivo existente")
-            with open(nombre_archivo, 'rb') as f:
-                modelo = pickle.load(f)
-            return modelo, {}
-        
-        st.sidebar.info("📥 Descargando desde Google Drive...")
-        
-        # URL de descarga con confirmación
-        url = f"https://drive.google.com/uc?export=download&id={FILE_ID}&confirm=t"
-        
-        # Crear sesión para manejar cookies
-        session = requests.Session()
-        
-        # Primera solicitud para obtener la cookie de confirmación
-        response = session.get(url, timeout=60)
-        
-        # Si hay advertencia de virus, extraer el token de confirmación
-        if "virus scan warning" in response.text.lower():
-            st.sidebar.info("⚠️ Confirmando descarga...")
-            
-            # Extraer el token de confirmación de la página HTML
-            import re
-            match = re.search(r"confirm=([0-9A-Za-z_]+)", response.text)
-            if match:
-                confirm_token = match.group(1)
-                # Segunda solicitud con token de confirmación
-                url_confirm = f"https://drive.google.com/uc?export=download&id={FILE_ID}&confirm={confirm_token}"
-                response = session.get(url_confirm, timeout=60)
-        
-        # Verificar que la respuesta sea el archivo y no HTML
-        if response.headers.get('content-type', '').startswith('text/html'):
-            st.error("❌ Google Drive aún muestra página HTML. Intenta lo siguiente:")
-            st.info("""
-            1. **Abre el archivo en Google Drive** y haz clic en "Descargar de todos modos"
-            2. **Sube el archivo manualmente** a otro servicio como Dropbox o OneDrive
-            3. **Comparte el archivo** con enlace público sin restricciones
-            """)
+        if not partes:
+            st.error("❌ No se encontraron partes del modelo")
             return None, None
         
-        # Guardar archivo
-        with open(nombre_archivo, 'wb') as f:
-            f.write(response.content)
+        st.sidebar.info(f"🔗 Uniendo {len(partes)} partes...")
         
-        # Verificar tamaño
-        tamaño = os.path.getsize(nombre_archivo)
-        st.sidebar.success(f"✅ Descargado: {tamaño / 1024 / 1024:.2f} MB")
+        # Unir las partes
+        datos_completos = b''
+        for num_parte in partes:
+            with open(f"modelo_parte_{num_parte}.pkl", 'rb') as f:
+                contenido = f.read()
+                datos_completos += contenido
+                st.sidebar.write(f"✅ Parte {num_parte}: {len(contenido) / 1024 / 1024:.2f} MB")
         
-        # Cargar el modelo
-        with open(nombre_archivo, 'rb') as f:
-            modelo = pickle.load(f)
+        # Verificar que tenemos datos
+        if len(datos_completos) == 0:
+            st.error("❌ Las partes están vacías")
+            return None, None
         
+        # Reconstruir el modelo
+        modelo = pickle.loads(datos_completos)
+        st.sidebar.success(f"🌲 Modelo reconstruido: {len(datos_completos) / 1024 / 1024:.2f} MB")
         return modelo, {}
         
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Error uniendo partes: {str(e)}")
         return None, None
-
+🚀 
 
 
 # Mapeos para las variables (iguales que antes)
@@ -747,7 +685,7 @@ def generar_recomendaciones_rf(probabilidad, datos):
 
 def main():
     """Función principal"""
-    pipeline, metadata = cargar_modelo_desde_drive()
+    pipeline, metadata = cargar_modelo_desde_partes()
 
     verificar_descarga()
     

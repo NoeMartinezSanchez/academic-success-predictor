@@ -1,8 +1,0 @@
-ARCHIVO_ORIGINAL=modelo_exito_academico_RF_optimizado.pkl
-TAMAÑO_TOTAL=186226575
-PARTES=8
-TAMAÑO_PARTE_MB=24
-
-INSTRUCCIONES PARA UNIR:
-1. Subir todos los .partX a GitHub
-2. En Streamlit usar la función unir_archivos()

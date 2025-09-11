@@ -346,7 +346,6 @@ def cargar_modelo_desde_partes():
     except Exception as e:
         st.error(f"❌ Error uniendo partes: {str(e)}")
         return None, None
-🚀 
 
 
 # Mapeos para las variables (iguales que antes)

@@ -14,7 +14,40 @@ from sklearn.compose import ColumnTransformer
 import gdown
 import requests
 
+def verificar_descarga():
+    """
+    Función temporal para diagnosticar problemas de descarga
+    """
+    st.sidebar.subheader("🔍 Diagnóstico de Descarga")
+    
+    FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"
+    url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
+    
+    try:
+        # Probando la conexión
+        st.sidebar.write("🔗 Probando conexión...")
+        response = requests.head(url, timeout=10)
+        st.sidebar.write(f"📡 Status: {response.status_code}")
+        
+        # Descargar una pequeña parte para verificar
+        st.sidebar.write("📦 Probando descarga...")
+        response = requests.get(url, stream=True, timeout=30)
+        contenido = response.content[:500]  # Primeros 500 bytes
+        
+        st.sidebar.write(f"📊 Tamaño: {len(response.content) / 1024 / 1024:.2f} MB")
+        st.sidebar.write(f"🔍 Primeros bytes: {contenido}")
+        
+        # Guardar temporalmente para análisis
+        with open("debug_download.bin", 'wb') as f:
+            f.write(contenido)
+            
+        st.sidebar.success("✅ Diagnóstico completado")
+        
+    except Exception as e:
+        st.sidebar.error(f"❌ Error en diagnóstico: {e}")
 
+# Llamar esta función temporalmente en main() si necesitas diagnosticar
+# verificar_descarga()
 
 # Configuración de la página
 st.set_page_config(
@@ -711,6 +744,8 @@ def generar_recomendaciones_rf(probabilidad, datos):
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_drive()
+
+    verificar_descarga()
     
     if pipeline is None:
         return

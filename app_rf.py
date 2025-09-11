@@ -306,47 +306,44 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# FUNCIÓN ESPECÍFICA PARA STREAMLIT
+# Reemplaza esta función con tu método de carga actual
 @st.cache_resource
-def cargar_modelo_desde_partes():
+def cargar_modelo_desde_url():
     """
-    Función OPTIMIZADA para Streamlit Cloud
+    Cargar el modelo desde una URL pública (Dropbox/OneDrive)
     """
     try:
-        # Buscar partes automáticamente
-        partes = []
-        for i in range(1, 20):  # Buscar hasta 20 partes
-            if os.path.exists(f"modelo_parte_{i}.pkl"):
-                partes.append(i)
+        # URL pública de Dropbox (debes reemplazarla con tu enlace real)
+        dropbox_url = "https://www.dropbox.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=1"
         
-        if not partes:
-            st.error("❌ No se encontraron partes del modelo")
-            return None, None
+        # Descargar el modelo
+        response = requests.get(dropbox_url)
+        response.raise_for_status()
         
-        st.sidebar.info(f"🔗 Uniendo {len(partes)} partes...")
+        # Cargar el modelo desde los bytes descargados
+        modelo = pickle.load(BytesIO(response.content))
         
-        # Unir las partes
-        datos_completos = b''
-        for num_parte in partes:
-            with open(f"modelo_parte_{num_parte}.pkl", 'rb') as f:
-                contenido = f.read()
-                datos_completos += contenido
-                st.sidebar.write(f"✅ Parte {num_parte}: {len(contenido) / 1024 / 1024:.2f} MB")
-        
-        # Verificar que tenemos datos
-        if len(datos_completos) == 0:
-            st.error("❌ Las partes están vacías")
-            return None, None
-        
-        # Reconstruir el modelo
-        modelo = pickle.loads(datos_completos)
-        st.sidebar.success(f"🌲 Modelo reconstruido: {len(datos_completos) / 1024 / 1024:.2f} MB")
+        st.sidebar.success("✅ Modelo cargado exitosamente desde la nube")
         return modelo, {}
         
     except Exception as e:
-        st.error(f"❌ Error uniendo partes: {str(e)}")
-        return None, None
-
+        st.error(f"❌ Error cargando modelo: {str(e)}")
+        st.info("""
+        ℹ️ Si el modelo no está disponible, estamos usando un modelo de demostración.
+        Para cargar el modelo completo, contacta al administrador.
+        """)
+        
+        # Cargar un modelo de demostración pequeño
+        from sklearn.ensemble import RandomForestClassifier
+        import numpy as np
+        
+        # Crear un modelo de demostración simple
+        modelo_demo = RandomForestClassifier(n_estimators=10, random_state=42)
+        X_demo = np.random.rand(100, 5)
+        y_demo = np.random.randint(0, 2, 100)
+        modelo_demo.fit(X_demo, y_demo)
+        
+        return modelo_demo, {"modo_demo": True}
 
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {
@@ -686,7 +683,7 @@ def generar_recomendaciones_rf(probabilidad, datos):
 
 def main():
     """Función principal"""
-    pipeline, metadata = cargar_modelo_desde_partes()
+    pipeline, metadata = cargar_modelo_desde_url()
 
     if pipeline is None:
         return

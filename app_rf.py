@@ -311,46 +311,68 @@ st.markdown("""
 @st.cache_resource
 def cargar_modelo_desde_drive():
     """
-    Versión alternativa más robusta
+    Versión más robusta con mejor manejo de errores
     """
     try:
         FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"
         nombre_archivo = "modelo_exito_academico_RF_optimizado.pkl"
         
-        # Verificar si ya existe
+        # Verificar si ya existe y es válido
         if os.path.exists(nombre_archivo):
-            st.sidebar.info("✅ Usando archivo existente")
-        else:
-            st.sidebar.info("📥 Descargando desde Google Drive...")
-            
-            # URL de descarga
-            url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
-            
-            # Descargar con timeout
-            response = requests.get(url, timeout=60)
-            response.raise_for_status()
-            
-            # Guardar archivo
-            with open(nombre_archivo, 'wb') as f:
-                f.write(response.content)
-            
-            st.sidebar.success("✅ Descarga completada")
+            try:
+                with open(nombre_archivo, 'rb') as f:
+                    modelo = pickle.load(f)
+                st.sidebar.success("✅ Modelo cargado desde caché")
+                return modelo, {}
+            except:
+                st.sidebar.warning("⚠️ Archivo corrupto, descargando de nuevo...")
+                os.remove(nombre_archivo)
+        
+        # Descargar desde Google Drive
+        st.sidebar.info("📥 Descargando modelo desde Google Drive...")
+        
+        # URL de descarga
+        url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
+        
+        # Descargar con timeout y verificación
+        response = requests.get(url, timeout=120)
+        response.raise_for_status()
+        
+        # Verificar que no sea una página HTML de error
+        if len(response.content) < 1000 and b"html" in response.content.lower():
+            st.error("❌ Error: Google Drive está mostrando una página HTML en lugar del archivo")
+            return None, None
+        
+        # Guardar archivo
+        with open(nombre_archivo, 'wb') as f:
+            f.write(response.content)
+        
+        # Verificar que se descargó correctamente
+        tamaño = os.path.getsize(nombre_archivo)
+        st.sidebar.success(f"✅ Descargado: {tamaño / 1024 / 1024:.2f} MB")
         
         # Cargar el modelo
         with open(nombre_archivo, 'rb') as f:
             modelo = pickle.load(f)
         
+        st.sidebar.success("🌲 Modelo Random Forest cargado exitosamente!")
         return modelo, {}
         
-    except requests.exceptions.RequestException as e:
-        st.error(f"❌ Error de conexión: {e}")
+    except requests.exceptions.Timeout:
+        st.error("❌ Timeout: La descarga tardó demasiado")
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Error de conexión: Verifica tu internet")
+    except requests.exceptions.HTTPError as e:
+        st.error(f"❌ Error HTTP: {e}")
     except pickle.UnpicklingError as e:
-        st.error(f"❌ Error cargando el archivo pickle: {e}")
+        st.error(f"❌ Error cargando el modelo: {e}")
+        st.info("ℹ️ El archivo puede estar corrupto o en formato incorrecto")
     except Exception as e:
         st.error(f"❌ Error inesperado: {e}")
     
     return None, None
-    
+
+
 
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {

@@ -12,52 +12,6 @@ import pickle
 import os
 from sklearn.compose import ColumnTransformer
 
-def diagnosticar_modelo(pipeline):
-    """
-    Función para entender la estructura de tu modelo
-    """
-    st.subheader("🔍 Diagnóstico del Modelo")
-    
-    if isinstance(pipeline, np.ndarray):
-        st.write("📦 Es un array de NumPy")
-        st.write(f"   Forma: {pipeline.shape}")
-        st.write(f"   Tipo de datos: {pipeline.dtype}")
-        st.write(f"   Número de elementos: {len(pipeline)}")
-        
-        for i, item in enumerate(pipeline):
-            st.write(f"\n   Elemento {i}:")
-            if item is None:
-                st.write("      None")
-            else:
-                st.write(f"      Tipo: {type(item).__name__}")
-                
-                # Verificar si es un modelo de sklearn
-                if hasattr(item, 'predict'):
-                    st.write("      ✅ Tiene método predict()")
-                if hasattr(item, 'predict_proba'):
-                    st.write("      ✅ Tiene método predict_proba()")
-                if hasattr(item, 'classes_'):
-                    st.write(f"      Classes: {item.classes_}")
-                
-                # Verificar si es un pipeline
-                if hasattr(item, 'steps'):
-                    st.write(f"      Es un Pipeline con {len(item.steps)} steps")
-                    for step_name, step_model in item.steps:
-                        st.write(f"        Step '{step_name}': {type(step_model).__name__}")
-    
-    elif hasattr(pipeline, 'predict'):
-        st.write("📦 Es un modelo de machine learning")
-        st.write(f"   Tipo: {type(pipeline).__name__}")
-        if hasattr(pipeline, 'predict_proba'):
-            st.write("   ✅ Tiene predict_proba")
-        if hasattr(pipeline, 'classes_'):
-            st.write(f"   Classes: {pipeline.classes_}")
-    
-    else:
-        st.write("❌ Tipo de modelo no reconocido")
-
-# Usar la función de diagnóstico
-# diagnosticar_modelo(pipeline)
 
 
 # Configuración de la página
@@ -352,65 +306,39 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
+# requirements.txt adicional:
+# gdown>=4.6.0
+
 @st.cache_resource
-def cargar_modelo():
+def descargar_con_gdown(file_id, nombre_archivo):
     """
-    Función para cargar el modelo con manejo de compatibilidad
+    Descarga usando gdown (más robusto para Google Drive)
     """
     try:
-        # Primero registrar la clase personalizada si es necesario
-        try:
-            from sklearn.compose._column_transformer import _RemainderColsList
-        except ImportError:
-            # Crear una clase dummy para compatibilidad
-            class _RemainderColsList(list):
-                pass
+        import gdown
+        
+        # Si el archivo ya existe
+        if os.path.exists(nombre_archivo):
+            return nombre_archivo
+        
+        # URL de descarga
+        #https://drive.google.com/file/d/1zDspZei9xuVBHg_QY4x7LR_0pUchn92v/view?usp=sharing
+        url = f"https://drive.google.com/uc?id={1zDspZei9xuVBHg_QY4x7LR_0pUchn92v}"
+        
+        # Descargar
+        gdown.download(url, nombre_archivo, quiet=False)
+        
+        if os.path.exists(nombre_archivo):
+            st.sidebar.success(f"✅ {nombre_archivo} descargado")
+            return nombre_archivo
+        else:
+            st.sidebar.error("❌ Descarga falló")
+            return None
             
-            # Registrar la clase para pickle
-            import sys
-            module = sys.modules['sklearn.compose._column_transformer']
-            setattr(module, '_RemainderColsList', _RemainderColsList)
-        
-        # Unir partes si es necesario
-        if not os.path.exists('modelo_exito_academico_RF_optimizado.pkl'):
-            st.info("🔗 Uniendo partes del modelo...")
-            
-            partes = 0
-            while os.path.exists(f'modelo_exito_academico_RF_optimizado.pkl.part{partes + 1}'):
-                partes += 1
-            
-            if partes == 0:
-                st.error("❌ No se encontraron partes del modelo")
-                return None, None
-            
-            with open('modelo_exito_academico_RF_optimizado.pkl', 'wb') as archivo_final:
-                for i in range(1, partes + 1):
-                    nombre_parte = f'modelo_exito_academico_RF_optimizado.pkl.part{i}'
-                    try:
-                        with open(nombre_parte, 'rb') as archivo_parte:
-                            datos = archivo_parte.read()
-                            archivo_final.write(datos)
-                        st.write(f"✅ Parte {i} de {partes} cargada")
-                    except Exception as e:
-                        st.error(f"❌ Error cargando parte {i}: {e}")
-                        return None, None
-        
-        # Cargar el modelo
-        with open('modelo_exito_academico_RF_optimizado.pkl', 'rb') as f:
-            pipeline = pickle.load(f)
-        
-        # Cargar metadata
-        metadata = joblib.load('modelo_metadatos.pkl')
-        
-        st.success("✅ Modelo cargado exitosamente!")
-        return pipeline, metadata
-        
     except Exception as e:
-        st.error(f"❌ Error al cargar el modelo: {str(e)}")
-        st.info("💡 Solución: Verifica que scikit-learn esté en la misma versión que usaste para entrenar")
-        return None, None
-
-   
+        st.sidebar.error(f"❌ Error con gdown: {e}")
+        return None
+        
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {
     'si_no': {'Sí': 1, 'No': 0},
@@ -751,7 +679,6 @@ def main():
     
     if pipeline is None:
         return
-    diagnosticar_modelo(pipeline)
     
     # Mostrar información del modelo cargado
     if metadata:

@@ -682,25 +682,34 @@ def generar_recomendaciones_rf(probabilidad, datos):
     for i, rec in enumerate(recomendaciones, 1):
         st.markdown(f'<div class="recommendation-box">**{i}.** {rec}</div>', unsafe_allow_html=True)
 
+# ... (todo tu código anterior permanece igual hasta la función main) ...
+
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_partes()
 
-    
     if pipeline is None:
         return
     
-    # Mostrar información del modelo cargado
-    if metadata:
-        st.success(f"✅ Modelo Random Forest cargado - Entrenado el {metadata['fecha_entrenamiento'].strftime('%d/%m/%Y')}")
+    # DIAGNÓSTICO: Verificar qué se cargó realmente
+    st.sidebar.subheader("🔍 Diagnóstico del objeto cargado")
+    st.sidebar.write(f"**Tipo:** {type(pipeline)}")
+    
+    if hasattr(pipeline, 'shape'):
+        st.sidebar.write(f"**Forma:** {pipeline.shape}")
+        st.sidebar.write(f"**Tipo de datos:** {pipeline.dtype}")
+        st.sidebar.write(f"**Elementos:** {len(pipeline)}")
         
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("🎯 ROC-AUC", f"{metadata['roc_auc']:.3f}")
-        with col2:
-            st.metric("📊 Accuracy", f"{metadata['accuracy']:.3f}")
-        with col3:
-            st.metric("🌲 Estimadores", metadata['parametros_optimizados'].get('n_estimators', 'N/A'))
+        # Mostrar información de los primeros elementos
+        for i, item in enumerate(pipeline[:3]):
+            if item is not None:
+                st.sidebar.write(f"**Elemento {i}:** {type(item).__name__}")
+                if hasattr(item, 'predict'):
+                    st.sidebar.write(f"  ✅ Tiene predict()")
+                if hasattr(item, 'predict_proba'):
+                    st.sidebar.write(f"  ✅ Tiene predict_proba()")
+            else:
+                st.sidebar.write(f"**Elemento {i}:** None")
     
     # Crear formulario en sidebar
     submitted, datos_usuario = crear_formulario()
@@ -715,13 +724,38 @@ def main():
                 # Crear DataFrame
                 X_nuevo = crear_dataframe_modelo(datos_procesados)
                 
-                # Hacer predicción
-                probabilidad = pipeline.predict_proba(X_nuevo)[0, 1]
-                prediccion = pipeline.predict(X_nuevo)[0]
+                # PREDICCIÓN CORREGIDA - Manejar array de NumPy
+                if isinstance(pipeline, np.ndarray) and len(pipeline) > 0:
+                    # Buscar el primer elemento que sea un modelo válido
+                    modelo_real = None
+                    for elemento in pipeline:
+                        if (elemento is not None and 
+                            hasattr(elemento, 'predict_proba') and 
+                            hasattr(elemento, 'predict')):
+                            modelo_real = elemento
+                            break
+                    
+                    if modelo_real is not None:
+                        probabilidad = modelo_real.predict_proba(X_nuevo)[0, 1]
+                        prediccion = modelo_real.predict(X_nuevo)[0]
+                    else:
+                        st.error("❌ No se encontró un modelo válido en el array")
+                        return
+                else:
+                    # Si ya es un modelo directamente
+                    probabilidad = pipeline.predict_proba(X_nuevo)[0, 1]
+                    prediccion = pipeline.predict(X_nuevo)[0]
                 
             # Mostrar resultados
             st.success("🌲 ¡Predicción Random Forest completada exitosamente!")
-            mostrar_resultados(probabilidad, prediccion, datos_usuario, metadata)
+            mostrar_resultados(probabilidad, prediccion, datos_usuario, {})
+            
+        except Exception as e:
+            st.error(f"❌ Error en la predicción Random Forest: {str(e)}")
+            st.info("ℹ️ El objeto cargado no es un modelo válido o está corrupto.")
+
+# ... (el resto de tu código permanece igual) ...
+
             
             # Información técnica
             with st.expander("🔧 Detalles técnicos del modelo Random Forest"):

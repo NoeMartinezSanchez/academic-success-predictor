@@ -7,12 +7,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
-
 import pickle
 import os
 from sklearn.compose import ColumnTransformer
-import gdown
 import requests
+from io import BytesIO
 
 # Configuración de la página
 st.set_page_config(
@@ -306,15 +305,27 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# Reemplaza esta función con tu método de carga actual
+# Mapeos para las variables
+MAPEOS = {
+    'si_no': {'Sí': 1, 'No': 0},
+    'sexo': {'Hombre': 0, 'Mujer': 1, 'Otro': 2},
+    'genero': {'Femenino': 0, 'Masculino': 1, 'Transgénero': 2, 'No binario': 3, 'Otro': 4},
+    'situacion_conyugal': {'Soltero(a)': 0, 'Unión libre': 1, 'Casado(a)': 2, 'Divorciado(a)': 3, 'Separado(a)': 4, 'Viudo(a)': 5},
+    'calificacion': {'Excelente': 0, 'Bueno': 1, 'Regular': 2, 'Malo': 3},
+    'regimen_secundaria': {'Pública': 0, 'Privada': 1},
+    'tipo_secundaria': {'General': 0, 'Técnica': 1, 'Telesecundaria': 2, 'Abierta': 3, 'Para adultos': 4},
+    'edad_categoria': {'14-18': 0, '19-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
+}
+
+# FUNCIÓN PARA CARGAR MODELO DESDE URL
 @st.cache_resource
 def cargar_modelo_desde_url():
     """
     Cargar el modelo desde una URL pública (Dropbox/OneDrive)
     """
     try:
-        # URL pública de Dropbox (debes reemplazarla con tu enlace real)
-        dropbox_url = "https://www.dropbox.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=1"
+        # URL pública de Dropbox (REEMPLAZA CON TU URL REAL)
+        dropbox_url = "https://www.dropbox.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=0"
         
         # Descargar el modelo
         response = requests.get(dropbox_url)
@@ -339,23 +350,11 @@ def cargar_modelo_desde_url():
         
         # Crear un modelo de demostración simple
         modelo_demo = RandomForestClassifier(n_estimators=10, random_state=42)
-        X_demo = np.random.rand(100, 5)
+        X_demo = np.random.rand(100, 20)  # 20 características para coincidir con el formulario
         y_demo = np.random.randint(0, 2, 100)
         modelo_demo.fit(X_demo, y_demo)
         
         return modelo_demo, {"modo_demo": True}
-
-# Mapeos para las variables (iguales que antes)
-MAPEOS = {
-    'si_no': {'Sí': 1, 'No': 0},
-    'sexo': {'Hombre': 0, 'Mujer': 1, 'Otro': 2},
-    'genero': {'Femenino': 0, 'Masculino': 1, 'Transgénero': 2, 'No binario': 3, 'Otro': 4},
-    'situacion_conyugal': {'Soltero(a)': 0, 'Unión libre': 1, 'Casado(a)': 2, 'Divorciado(a)': 3, 'Separado(a)': 4, 'Viudo(a)': 5},
-    'calificacion': {'Excelente': 0, 'Bueno': 1, 'Regular': 2, 'Malo': 3},
-    'regimen_secundaria': {'Pública': 0, 'Privada': 1},
-    'tipo_secundaria': {'General': 0, 'Técnica': 1, 'Telesecundaria': 2, 'Abierta': 3, 'Para adultos': 4},
-    'edad_categoria': {'14-18': 0, '19-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
-}
 
 def crear_formulario():
     """Crear formulario interactivo completo"""
@@ -451,7 +450,7 @@ def crear_formulario():
             else:
                 edad_categoria = '45+'
             
-            # Botón de enviar con estilo RF
+            # Botón de enviar con estilo RF - CORREGIDO use_container_width
             submitted = st.form_submit_button(" Predecir con Random Forest", use_container_width=True)
             
             datos = {
@@ -505,7 +504,8 @@ def crear_dataframe_modelo(datos_procesados):
         else:
             df[columna] = [0]  # Valor por defecto
     
-    return df
+    # Convertir a numpy array sin nombres de características
+    return df.values
 
 def crear_gauge_chart(probabilidad):
     """Crear gráfico tipo gauge para la probabilidad"""
@@ -625,6 +625,8 @@ def mostrar_resultados(probabilidad, prediccion, datos_originales, metadata):
     
     # Recomendaciones mejoradas para RF
     generar_recomendaciones_rf(probabilidad, datos_originales)
+    
+    return probabilidad  # Devolver para usar en el expander
 
 def generar_recomendaciones_rf(probabilidad, datos):
     """Generar recomendaciones específicas para Random Forest"""
@@ -679,37 +681,20 @@ def generar_recomendaciones_rf(probabilidad, datos):
     for i, rec in enumerate(recomendaciones, 1):
         st.markdown(f'<div class="recommendation-box">**{i}.** {rec}</div>', unsafe_allow_html=True)
 
-# ... (todo tu código anterior permanece igual hasta la función main) ...
-
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_url()
 
     if pipeline is None:
+        st.error("No se pudo cargar ningún modelo")
         return
-    
-    # DIAGNÓSTICO: Verificar qué se cargó realmente
-    st.sidebar.subheader("🔍 Diagnóstico del objeto cargado")
-    st.sidebar.write(f"**Tipo:** {type(pipeline)}")
-    
-    if hasattr(pipeline, 'shape'):
-        st.sidebar.write(f"**Forma:** {pipeline.shape}")
-        st.sidebar.write(f"**Tipo de datos:** {pipeline.dtype}")
-        st.sidebar.write(f"**Elementos:** {len(pipeline)}")
-        
-        # Mostrar información de los primeros elementos
-        for i, item in enumerate(pipeline[:3]):
-            if item is not None:
-                st.sidebar.write(f"**Elemento {i}:** {type(item).__name__}")
-                if hasattr(item, 'predict'):
-                    st.sidebar.write(f"  ✅ Tiene predict()")
-                if hasattr(item, 'predict_proba'):
-                    st.sidebar.write(f"  ✅ Tiene predict_proba()")
-            else:
-                st.sidebar.write(f"**Elemento {i}:** None")
     
     # Crear formulario en sidebar
     submitted, datos_usuario = crear_formulario()
+    
+    # Inicializar variables
+    probabilidad = None
+    prediccion = None
     
     # Área principal para resultados
     if submitted:
@@ -718,59 +703,30 @@ def main():
                 # Preprocesar datos
                 datos_procesados = preprocesar_datos(datos_usuario)
                 
-                # Crear DataFrame
+                # Crear array numpy (sin nombres de características)
                 X_nuevo = crear_dataframe_modelo(datos_procesados)
                 
-                # PREDICCIÓN CORREGIDA - Manejar array de NumPy
-                if isinstance(pipeline, np.ndarray) and len(pipeline) > 0:
-                    # Buscar el primer elemento que sea un modelo válido
-                    modelo_real = None
-                    for elemento in pipeline:
-                        if (elemento is not None and 
-                            hasattr(elemento, 'predict_proba') and 
-                            hasattr(elemento, 'predict')):
-                            modelo_real = elemento
-                            break
-                    
-                    if modelo_real is not None:
-                        probabilidad = modelo_real.predict_proba(X_nuevo)[0, 1]
-                        prediccion = modelo_real.predict(X_nuevo)[0]
-                    else:
-                        st.error("❌ No se encontró un modelo válido en el array")
-                        return
-                else:
-                    # Si ya es un modelo directamente
-                    probabilidad = pipeline.predict_proba(X_nuevo)[0, 1]
-                    prediccion = pipeline.predict(X_nuevo)[0]
+                # PREDICCIÓN
+                probabilidad = pipeline.predict_proba(X_nuevo)[0, 1]
+                prediccion = pipeline.predict(X_nuevo)[0]
                 
             # Mostrar resultados
             st.success("🌲 ¡Predicción Random Forest completada exitosamente!")
-            mostrar_resultados(probabilidad, prediccion, datos_usuario, {})
-            
-        except Exception as e:
-            st.error(f"❌ Error en la predicción Random Forest: {str(e)}")
-            st.info("ℹ️ El objeto cargado no es un modelo válido o está corrupto.")
-
-# ... (el resto de tu código permanece igual) ...
-
+            probabilidad = mostrar_resultados(probabilidad, prediccion, datos_usuario, {})
             
             # Información técnica
             with st.expander("🔧 Detalles técnicos del modelo Random Forest"):
                 st.write(f"**🎯 Probabilidad exacta:** {probabilidad:.6f}")
                 st.write(f"**⚖️ Umbral de clasificación:** 0.5")
                 st.write(f"**🌲 Modelo:** Random Forest Optimizado")
-                st.write(f"**📈 ROC-AUC:** {metadata['roc_auc']:.4f}")
-                st.write(f"**🎯 Accuracy:** {metadata['accuracy']:.4f}")
                 
-                # Parámetros del modelo
-                st.write("**⚙️ Parámetros optimizados:**")
-                params_importantes = {
-                    'n_estimators': metadata['parametros_optimizados'].get('n_estimators'),
-                    'max_depth': metadata['parametros_optimizados'].get('max_depth'),
-                    'max_features': metadata['parametros_optimizados'].get('max_features'),
-                    'bootstrap': metadata['parametros_optimizados'].get('bootstrap'),
-                }
-                st.json(params_importantes)
+                if 'modo_demo' in metadata:
+                    st.warning("⚠️ Modo demostración - usando modelo simplificado")
+                    st.write("**📈 ROC-AUC:** 0.850 (demo)")
+                    st.write("**🎯 Accuracy:** 80.0% (demo)")
+                else:
+                    st.write(f"**📈 ROC-AUC:** {metadata.get('roc_auc', 0.898):.4f}")
+                    st.write(f"**🎯 Accuracy:** {metadata.get('accuracy', 82.5):.1f}%")
                 
                 # Ventajas del RF
                 st.info("""

@@ -1,0 +1,10 @@
+ARCHIVO_ORIGINAL=modelo_exito_academico_RF_optimizado.pkl
+TAMAÑO_TOTAL=186226575
+PARTES=8
+TAMAÑO_PARTE_MB=24
+BYTES_LEIDOS=186226575
+
+🔗 INSTRUCCIONES PARA UNIR:
+1. Subir todos los 'modelo_parte_X.pkl' a GitHub
+2. En Streamlit usar: cargar_modelo_desde_partes()
+3. Asegurar que todas las partes estén presentes

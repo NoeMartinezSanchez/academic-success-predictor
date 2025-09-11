@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import pickle
 import os
 from sklearn.compose import ColumnTransformer
+import gdown
 
 
 
@@ -306,39 +307,32 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# requirements.txt adicional:
-# gdown>=4.6.0
-
 @st.cache_resource
-def descargar_con_gdown(file_id, nombre_archivo):
+def cargar_modelo_desde_drive():
     """
-    Descarga usando gdown (más robusto para Google Drive)
+    Carga el modelo desde Google Drive
     """
     try:
-        import gdown
+        # FILE ID de tu archivo en Google Drive - DEBE ESTAR ENTRE COMILLAS
+        FILE_ID = "1zDspZei9xuVBHg_QY4x7LR_0pUchn92v"  # ✅ CON COMILLAS
         
-        # Si el archivo ya existe
-        if os.path.exists(nombre_archivo):
-            return nombre_archivo
+        # Descargar el modelo
+        archivo_modelo = descargar_modelo_drive(FILE_ID, "modelo_exito_academico_RF_optimizado.pkl")
         
-        # URL de descarga
-        #https://drive.google.com/file/d/1zDspZei9xuVBHg_QY4x7LR_0pUchn92v/view?usp=sharing
-        url = f"https://drive.google.com/uc?id={1zDspZei9xuVBHg_QY4x7LR_0pUchn92v}"
+        if archivo_modelo is None:
+            return None, None
         
-        # Descargar
-        gdown.download(url, nombre_archivo, quiet=False)
+        # Cargar el modelo
+        with open(archivo_modelo, 'rb') as f:
+            modelo = pickle.load(f)
         
-        if os.path.exists(nombre_archivo):
-            st.sidebar.success(f"✅ {nombre_archivo} descargado")
-            return nombre_archivo
-        else:
-            st.sidebar.error("❌ Descarga falló")
-            return None
-            
+        return modelo, {}  # Retornar metadata vacío por ahora
+        
     except Exception as e:
-        st.sidebar.error(f"❌ Error con gdown: {e}")
-        return None
-        
+        st.error(f"❌ Error cargando modelo: {e}")
+        return None, None
+
+
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {
     'si_no': {'Sí': 1, 'No': 0},

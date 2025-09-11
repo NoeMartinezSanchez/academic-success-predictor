@@ -686,7 +686,6 @@ def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_partes()
 
-    verificar_descarga()
     
     if pipeline is None:
         return

@@ -325,10 +325,10 @@ def cargar_modelo_desde_url():
     """
     try:
         # URL CORREGIDA: Cambia 'www.dropbox.com' por 'dl.dropboxusercontent.com' y elimina parámetros
-        dropbox_url = "https://dl.dropboxusercontent.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=1"
+        # dropbox_url = "https://dl.dropboxusercontent.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=1"
         
         # Alternativa: Si la anterior no funciona, prueba esta
-        # dropbox_url = "https://www.dropbox.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&raw=1"
+        dropbox_url = "https://www.dropbox.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&raw=1"
         
         st.sidebar.info("🌐 Descargando modelo desde la nube...")
         

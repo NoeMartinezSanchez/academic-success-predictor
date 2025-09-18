@@ -300,19 +300,56 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# Cargar modelo Random Forest
+
+
 @st.cache_resource
 def cargar_modelo():
+    """
+    Función de carga con múltiples estrategias de compatibilidad
+    """
+    # Intentar diferentes métodos
+    métodos = [
+        cargar_normal,
+        cargar_con_parche, 
+        cargar_con_pickle
+    ]
+    
+    for método in métodos:
+        try:
+            pipeline, metadata = método()
+            if pipeline is not None:
+                return pipeline, metadata
+        except:
+            continue
+    
+    st.error("❌ No se pudo cargar el modelo con ningún método")
+    return None, None
+
+def cargar_normal():
+    """Intenta carga normal"""
+    return joblib.load('modelo_rf_ligero.pkl'), joblib.load('metadatos_rf_ligero.pkl')
+
+def cargar_con_parche():
+    """Intenta con parche de compatibilidad"""
+    class _RemainderColsList(list):
+        pass
+    import sklearn.compose._column_transformer as ct
+    ct._RemainderColsList = _RemainderColsList
+    return joblib.load('modelo_rf_ligero.pkl'), joblib.load('metadatos_rf_ligero.pkl')
+
+def cargar_con_pickle():
+    """Intenta cargar versión pickle si existe"""
     try:
-        pipeline = joblib.load('modelo_rf_ligero.pkl')
-        metadata = joblib.load('metadatos_rf_ligero.pkl')
+        import pickle
+        with open('modelo_rf_ligero_pickle.pkl', 'rb') as f:
+            pipeline = pickle.load(f)
+        with open('metadatos_rf_ligero_pickle.pkl', 'rb') as f:
+            metadata = pickle.load(f)
         return pipeline, metadata
-    except FileNotFoundError:
-        st.error("❌ No se pudo cargar el modelo Random Forest. Verifica que los archivos existen.")
+    except:
         return None, None
-    except Exception as e:
-        st.error(f"❌ Error al cargar el modelo: {str(e)}")
-        return None, None
+
+
 
 # Mapeos para las variables (iguales que antes)
 MAPEOS = {

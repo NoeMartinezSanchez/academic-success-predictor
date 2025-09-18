@@ -320,10 +320,11 @@ MAPEOS = {
 
 
 
+
 @st.cache_resource
 def cargar_modelo_desde_url():
     """
-    Cargar el modelo desde una URL pública (Dropbox/OneDrive) - CORREGIDO
+    Cargar el modelo desde una URL pública (Dropbox/OneDrive) - CON DEBUG
     """
     try:
         # URL CORREGIDA
@@ -332,52 +333,52 @@ def cargar_modelo_desde_url():
         st.sidebar.info("🌐 Descargando modelo desde la nube... (180 MB, puede tardar)")
         
         # Descargar el modelo con timeout aumentado
-        response = requests.get(dropbox_url, timeout=180)  # 3 minutos
+        response = requests.get(dropbox_url, timeout=180)
         response.raise_for_status()
         
-        # Mostrar progreso
+        # ✅ DEBUG: Verificar qué se está descargando
+        content = response.content
+        st.sidebar.info(f"📦 Tamaño descargado: {len(content)} bytes")
+        
+        # Verificar si es un archivo válido (los primeros bytes de pickle)
+        if len(content) > 10:
+            st.sidebar.info(f"🔍 Primeros bytes: {content[:10]}")
+        
+        # Verificar si es HTML (podría ser página de error)
+        if b'<html>' in content[:1000].lower() or b'<!doctype' in content[:1000].lower():
+            st.sidebar.error("❌ Se descargó una página HTML, no el archivo")
+            # Mostrar parte del contenido para debug
+            st.sidebar.text(f"Contenido: {str(content[:500])}")
+            return crear_modelo_demo(), {"modo_demo": True}
+        
         st.sidebar.info("📦 Procesando modelo descargado...")
         
         # Cargar el modelo desde los bytes descargados
-        modelo = pickle.load(BytesIO(response.content))
+        modelo = pickle.load(BytesIO(content))
         
         # ✅ VERIFICACIÓN DESPUÉS de la carga completa
         if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
             st.sidebar.success("✅ Modelo verificado correctamente")
             
-            # Metadata del modelo real
             metadata = {
                 "roc_auc": 0.898,
                 "accuracy": 82.5,
-                "model_type": "Random Forest Optimizado",
-                "tamaño": "180 MB"
+                "model_type": "Random Forest Optimizado"
             }
             
             return modelo, metadata
         else:
             st.sidebar.error("❌ El archivo descargado no es un modelo válido")
-            # Crear modelo demo
             return crear_modelo_demo(), {"modo_demo": True}
         
-    except requests.exceptions.Timeout:
-        st.sidebar.error("⏰ Timeout: La descarga tardó demasiado (3 minutos)")
+    except pickle.UnpicklingError as e:
+        st.sidebar.error(f"❌ Error de formato pickle: {str(e)}")
         return crear_modelo_demo(), {"modo_demo": True}
         
     except Exception as e:
         st.sidebar.error(f"❌ Error cargando modelo: {str(e)}")
         return crear_modelo_demo(), {"modo_demo": True}
 
-def crear_modelo_demo():
-    """Crear modelo de demostración"""
-    from sklearn.ensemble import RandomForestClassifier
-    import numpy as np
-    
-    modelo_demo = RandomForestClassifier(n_estimators=10, random_state=42)
-    X_demo = np.random.rand(100, 20)
-    y_demo = np.random.randint(0, 2, 100)
-    modelo_demo.fit(X_demo, y_demo)
-    
-    return modelo_demo
 
 
 

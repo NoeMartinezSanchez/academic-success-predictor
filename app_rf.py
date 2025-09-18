@@ -374,6 +374,8 @@ def cargar_modelo_desde_url():
         modelo_demo.fit(X_demo, y_demo)
         
         return modelo_demo, {"modo_demo": True}
+
+
         
 def crear_formulario():
     """Crear formulario interactivo completo"""
@@ -703,6 +705,12 @@ def generar_recomendaciones_rf(probabilidad, datos):
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_url()
+
+    # Después de cargar el modelo, verifica que tenga los métodos necesarios
+if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
+    st.sidebar.success("✅ Modelo verificado correctamente")
+else:
+    st.sidebar.error("❌ El archivo no parece ser un modelo válido")
 
     if pipeline is None:
         st.error("No se pudo cargar ningún modelo")

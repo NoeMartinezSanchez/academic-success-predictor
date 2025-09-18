@@ -333,7 +333,7 @@ def cargar_modelo_desde_url():
         st.sidebar.info("🌐 Descargando modelo desde la nube...")
         
         # Descargar el modelo con timeout
-        response = requests.get(dropbox_url, timeout=30)
+        response = requests.get(dropbox_url, timeout=180)
         response.raise_for_status()
         
         # Verificar que el contenido sea un archivo pickle

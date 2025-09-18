@@ -342,6 +342,22 @@ def cargar_modelo_desde_url():
         
         # Cargar el modelo desde los bytes descargados
         modelo = pickle.load(BytesIO(response.content))
+
+        # ✅ VERIFICACIÓN DEL MODELO - AQUÍ ES DONDE VA EL CÓDIGO
+        if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
+            st.sidebar.success("✅ Modelo verificado correctamente")
+        else:
+            st.sidebar.error("❌ El archivo no parece ser un modelo válido")
+            # Si no es válido, crear uno de demostración
+            from sklearn.ensemble import RandomForestClassifier
+            import numpy as np
+            modelo = RandomForestClassifier(n_estimators=10, random_state=42)
+            X_demo = np.random.rand(100, 20)
+            y_demo = np.random.randint(0, 2, 100)
+            modelo.fit(X_demo, y_demo)
+            return modelo, {"modo_demo": True}
+        # ✅ FIN DE LA VERIFICACIÓN
+        
         
         st.sidebar.success("✅ Modelo cargado exitosamente desde la nube")
         
@@ -705,12 +721,6 @@ def generar_recomendaciones_rf(probabilidad, datos):
 def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_url()
-
-
-    # Después de cargar el modelo, verifica que tenga los métodos necesarios
-    if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
-        st.sidebar.success("✅ Modelo verificado correctamente")
-    # Después de cargar el modelo, verifica que tenga los métodos necesarios
 
 
     else:

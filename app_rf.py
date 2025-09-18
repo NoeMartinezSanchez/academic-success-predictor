@@ -12,6 +12,7 @@ import os
 from sklearn.compose import ColumnTransformer
 import requests
 from io import BytesIO
+import time
 
 # Configuración de la página
 st.set_page_config(

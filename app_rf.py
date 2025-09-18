@@ -7,12 +7,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
-import pickle
-import os
-from sklearn.compose import ColumnTransformer
-import requests
-from io import BytesIO
-import time
 
 # Configuración de la página
 st.set_page_config(
@@ -306,7 +300,21 @@ st.markdown("""
   Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
 
-# Mapeos para las variables
+# Cargar modelo Random Forest
+@st.cache_resource
+def cargar_modelo():
+    try:
+        pipeline = joblib.load('modelo_rf_ligero.pkl')
+        metadata = joblib.load('metadatos_rf_ligero.pkl')
+        return pipeline, metadata
+    except FileNotFoundError:
+        st.error("❌ No se pudo cargar el modelo Random Forest. Verifica que los archivos existen.")
+        return None, None
+    except Exception as e:
+        st.error(f"❌ Error al cargar el modelo: {str(e)}")
+        return None, None
+
+# Mapeos para las variables (iguales que antes)
 MAPEOS = {
     'si_no': {'Sí': 1, 'No': 0},
     'sexo': {'Hombre': 0, 'Mujer': 1, 'Otro': 2},
@@ -318,72 +326,6 @@ MAPEOS = {
     'edad_categoria': {'14-18': 0, '19-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
 }
 
-
-
-
-@st.cache_resource
-def cargar_modelo_desde_url():
-    """
-    Cargar el modelo desde una URL pública (Dropbox/OneDrive) - CON DEBUG
-    """
-    try:
-        # URL CORREGIDA
-        dropbox_url = "https://dl.dropboxusercontent.com/scl/fi/myo7f1nfm001p8nfk35ps/modelo_exito_academico_RF_optimizado.pkl?rlkey=azkx43l6hmqzsz9f2zgi85bps&st=frca2m34&dl=1"
-        
-        st.sidebar.info("🌐 Descargando modelo desde la nube... (180 MB, puede tardar)")
-        
-        # Descargar el modelo con timeout aumentado
-        response = requests.get(dropbox_url, timeout=180)
-        response.raise_for_status()
-        
-        # ✅ DEBUG: Verificar qué se está descargando
-        content = response.content
-        st.sidebar.info(f"📦 Tamaño descargado: {len(content)} bytes")
-        
-        # Verificar si es un archivo válido (los primeros bytes de pickle)
-        if len(content) > 10:
-            st.sidebar.info(f"🔍 Primeros bytes: {content[:10]}")
-        
-        # Verificar si es HTML (podría ser página de error)
-        if b'<html>' in content[:1000].lower() or b'<!doctype' in content[:1000].lower():
-            st.sidebar.error("❌ Se descargó una página HTML, no el archivo")
-            # Mostrar parte del contenido para debug
-            st.sidebar.text(f"Contenido: {str(content[:500])}")
-            return crear_modelo_demo(), {"modo_demo": True}
-        
-        st.sidebar.info("📦 Procesando modelo descargado...")
-        
-        # Cargar el modelo desde los bytes descargados
-        modelo = pickle.load(BytesIO(content))
-        
-        # ✅ VERIFICACIÓN DESPUÉS de la carga completa
-        if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
-            st.sidebar.success("✅ Modelo verificado correctamente")
-            
-            metadata = {
-                "roc_auc": 0.898,
-                "accuracy": 82.5,
-                "model_type": "Random Forest Optimizado"
-            }
-            
-            return modelo, metadata
-        else:
-            st.sidebar.error("❌ El archivo descargado no es un modelo válido")
-            return crear_modelo_demo(), {"modo_demo": True}
-        
-    except pickle.UnpicklingError as e:
-        st.sidebar.error(f"❌ Error de formato pickle: {str(e)}")
-        return crear_modelo_demo(), {"modo_demo": True}
-        
-    except Exception as e:
-        st.sidebar.error(f"❌ Error cargando modelo: {str(e)}")
-        return crear_modelo_demo(), {"modo_demo": True}
-
-
-
-
-
-        
 def crear_formulario():
     """Crear formulario interactivo completo"""
     with st.sidebar:
@@ -478,7 +420,7 @@ def crear_formulario():
             else:
                 edad_categoria = '45+'
             
-            # Botón de enviar con estilo RF - CORREGIDO use_container_width
+            # Botón de enviar con estilo RF
             submitted = st.form_submit_button(" Predecir con Random Forest", use_container_width=True)
             
             datos = {
@@ -532,8 +474,7 @@ def crear_dataframe_modelo(datos_procesados):
         else:
             df[columna] = [0]  # Valor por defecto
     
-    # Convertir a numpy array sin nombres de características
-    return df.values
+    return df
 
 def crear_gauge_chart(probabilidad):
     """Crear gráfico tipo gauge para la probabilidad"""
@@ -653,8 +594,6 @@ def mostrar_resultados(probabilidad, prediccion, datos_originales, metadata):
     
     # Recomendaciones mejoradas para RF
     generar_recomendaciones_rf(probabilidad, datos_originales)
-    
-    return probabilidad  # Devolver para usar en el expander
 
 def generar_recomendaciones_rf(probabilidad, datos):
     """Generar recomendaciones específicas para Random Forest"""
@@ -711,19 +650,24 @@ def generar_recomendaciones_rf(probabilidad, datos):
 
 def main():
     """Función principal"""
-    pipeline, metadata = cargar_modelo_desde_url()
-
-
+    pipeline, metadata = cargar_modelo()
     if pipeline is None:
-        st.error("No se pudo cargar ningún modelo")
         return
+    
+    # Mostrar información del modelo cargado
+    if metadata:
+        st.success(f"✅ Modelo Random Forest cargado - Entrenado el {metadata['fecha_entrenamiento'].strftime('%d/%m/%Y')}")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("🎯 ROC-AUC", f"{metadata['roc_auc']:.3f}")
+        with col2:
+            st.metric("📊 Accuracy", f"{metadata['accuracy']:.3f}")
+        with col3:
+            st.metric("🌲 Estimadores", metadata['parametros_optimizados'].get('n_estimators', 'N/A'))
     
     # Crear formulario en sidebar
     submitted, datos_usuario = crear_formulario()
-    
-    # Inicializar variables
-    probabilidad = None
-    prediccion = None
     
     # Área principal para resultados
     if submitted:
@@ -732,30 +676,34 @@ def main():
                 # Preprocesar datos
                 datos_procesados = preprocesar_datos(datos_usuario)
                 
-                # Crear array numpy (sin nombres de características)
+                # Crear DataFrame
                 X_nuevo = crear_dataframe_modelo(datos_procesados)
                 
-                # PREDICCIÓN
+                # Hacer predicción
                 probabilidad = pipeline.predict_proba(X_nuevo)[0, 1]
                 prediccion = pipeline.predict(X_nuevo)[0]
                 
             # Mostrar resultados
             st.success("🌲 ¡Predicción Random Forest completada exitosamente!")
-            probabilidad = mostrar_resultados(probabilidad, prediccion, datos_usuario, {})
+            mostrar_resultados(probabilidad, prediccion, datos_usuario, metadata)
             
             # Información técnica
             with st.expander("🔧 Detalles técnicos del modelo Random Forest"):
                 st.write(f"**🎯 Probabilidad exacta:** {probabilidad:.6f}")
                 st.write(f"**⚖️ Umbral de clasificación:** 0.5")
                 st.write(f"**🌲 Modelo:** Random Forest Optimizado")
+                st.write(f"**📈 ROC-AUC:** {metadata['roc_auc']:.4f}")
+                st.write(f"**🎯 Accuracy:** {metadata['accuracy']:.4f}")
                 
-                if 'modo_demo' in metadata:
-                    st.warning("⚠️ Modo demostración - usando modelo simplificado")
-                    st.write("**📈 ROC-AUC:** 0.850 (demo)")
-                    st.write("**🎯 Accuracy:** 80.0% (demo)")
-                else:
-                    st.write(f"**📈 ROC-AUC:** {metadata.get('roc_auc', 0.898):.4f}")
-                    st.write(f"**🎯 Accuracy:** {metadata.get('accuracy', 82.5):.1f}%")
+                # Parámetros del modelo
+                st.write("**⚙️ Parámetros optimizados:**")
+                params_importantes = {
+                    'n_estimators': metadata['parametros_optimizados'].get('n_estimators'),
+                    'max_depth': metadata['parametros_optimizados'].get('max_depth'),
+                    'max_features': metadata['parametros_optimizados'].get('max_features'),
+                    'bootstrap': metadata['parametros_optimizados'].get('bootstrap'),
+                }
+                st.json(params_importantes)
                 
                 # Ventajas del RF
                 st.info("""

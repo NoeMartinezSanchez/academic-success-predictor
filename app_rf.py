@@ -723,9 +723,6 @@ def main():
     pipeline, metadata = cargar_modelo_desde_url()
 
 
-    else:
-        st.sidebar.error("❌ El archivo no parece ser un modelo válido")
-
     if pipeline is None:
         st.error("No se pudo cargar ningún modelo")
         return

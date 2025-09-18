@@ -706,11 +706,15 @@ def main():
     """Función principal"""
     pipeline, metadata = cargar_modelo_desde_url()
 
+
     # Después de cargar el modelo, verifica que tenga los métodos necesarios
-if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
-    st.sidebar.success("✅ Modelo verificado correctamente")
-else:
-    st.sidebar.error("❌ El archivo no parece ser un modelo válido")
+    if hasattr(modelo, 'predict_proba') and hasattr(modelo, 'predict'):
+        st.sidebar.success("✅ Modelo verificado correctamente")
+    # Después de cargar el modelo, verifica que tenga los métodos necesarios
+
+
+    else:
+        st.sidebar.error("❌ El archivo no parece ser un modelo válido")
 
     if pipeline is None:
         st.error("No se pudo cargar ningún modelo")

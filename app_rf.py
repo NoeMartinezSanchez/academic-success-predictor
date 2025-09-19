@@ -304,40 +304,94 @@ st.markdown("""
 
 
 @st.cache_resource
-def cargar_modelo_compatible():
+def cargar_modelo():
     """
-    Carga el modelo entrenado con versión compatible
+    Función de carga robusta con diagnóstico completo
     """
     try:
-        # Intentar con joblib primero
+        # PRIMERO: Verificar que los archivos existen
+        archivos_necesarios = [
+            'modelo_rf_streamlit_compatible.joblib',
+            'metadatos_compatible.joblib',
+            'modelo_rf_streamlit_compatible.pkl',
+            'metadatos_compatible.pkl'
+        ]
+        
+        archivos_existentes = []
+        for archivo in archivos_necesarios:
+            if os.path.exists(archivo):
+                tamaño = os.path.getsize(archivo) / (1024 * 1024)
+                archivos_existentes.append(f"{archivo} ({tamaño:.1f} MB)")
+            else:
+                archivos_existentes.append(f"{archivo} ❌ NO EXISTE")
+        
+        st.sidebar.info("📁 Archivos encontrados:")
+        for archivo_info in archivos_existentes:
+            st.sidebar.write(f"   {archivo_info}")
+        
+        # SEGUNDO: Intentar carga con joblib (método preferido)
         try:
             pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
             metadata = joblib.load('metadatos_compatible.joblib')
-            st.sidebar.success("✅ Modelo cargado con joblib")
-            return pipeline, metadata
-        except:
-            # Fallback a pickle
+            
+            # Verificar que el pipeline tiene los métodos necesarios
+            if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
+                st.sidebar.success("✅ Modelo cargado con joblib")
+                return pipeline, metadata
+            else:
+                st.sidebar.error("❌ Modelo no tiene métodos predictivos")
+        except Exception as e:
+            st.sidebar.warning(f"⚠️ Joblib falló: {str(e)[:100]}...")
+        
+        # TERCERO: Intentar con pickle
+        try:
             with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
                 pipeline = pickle.load(f)
             with open('metadatos_compatible.pkl', 'rb') as f:
                 metadata = pickle.load(f)
-            st.sidebar.success("✅ Modelo cargado con pickle")
+            
+            if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
+                st.sidebar.success("✅ Modelo cargado con pickle")
+                return pipeline, metadata
+        except Exception as e:
+            st.sidebar.warning(f"⚠️ Pickle falló: {str(e)[:100]}...")
+        
+        # CUARTO: Parche de compatibilidad de último recurso
+        try:
+            # Crear clases compatibles manualmente
+            class _RemainderColsList(list):
+                pass
+            
+            # Inyectar en los módulos necesarios
+            import sklearn.compose._column_transformer as ct
+            ct._RemainderColsList = _RemainderColsList
+            
+            # Intentar carga again
+            pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
+            metadata = joblib.load('metadatos_compatible.joblib')
+            
+            st.sidebar.success("✅ Modelo cargado con parche de compatibilidad")
             return pipeline, metadata
             
+        except Exception as e:
+            st.sidebar.error(f"❌ Parche falló: {str(e)[:100]}...")
+    
     except Exception as e:
-        st.error(f"❌ Error cargando modelo compatible: {e}")
-        
-        # Información de diagnóstico
-        st.info("""
-        ℹ️ **Solución:**
-        1. Ejecuta el script de entrenamiento compatible
-        2. Sube los nuevos archivos .joblib o .pkl a GitHub
-        3. Los archivos deben llamarse:
-           - modelo_rf_streamlit_compatible.joblib
-           - metadatos_compatible.joblib
-        """)
-        
-        return None, None
+        st.error(f"❌ Error crítico en carga: {str(e)}")
+    
+    # Si todo falla, mostrar ayuda
+    st.error("""
+    🚨 **No se pudo cargar el modelo**. Por favor:
+    
+    1. **Verifica** que los archivos están en el repositorio
+    2. **Asegúrate** de que se llaman exactamente:
+       - `modelo_rf_streamlit_compatible.joblib`
+       - `metadatos_compatible.joblib`
+    3. **Revisa** que los archivos no estén corruptos
+    """)
+    
+    return None, None
+
 
 
 # Mapeos para las variables (iguales que antes)

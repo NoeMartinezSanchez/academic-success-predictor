@@ -69,17 +69,16 @@ A comprehensive machine learning solution that predicts student success in onlin
 ```
 academic-success-predictor/
 
-├── 📓 notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_feature_engineering.ipynb
-│   ├── 03_model_training.ipynb
-│   └── 04_model_optimization.ipynb
+├── 📁 Data/
+│   ├── datos_sinteticos_prepa_linea_reducido.csv
+├── 📓 Notebooks/
+│   ├── Éxito académico en educación en línea_RF.ipynb
 ├── 🤖 models/
-│   ├── modelo_exito_academico_RF_optimizado.pkl
-│   └── modelo_metadatos.pkl
+│   ├── modelo_rf_ligero.pkl
+│   └── modelo_rf_streamlit_compatible.joblib
+│   └── modelo_rf_streamlit_compatible.pkl
 ├── 🚀 app/
-│   ├── streamlit_app.py
-│   ├── predictor.py
+│   ├── app_rf.py
 │ 
 ├── 📈 results/
 │   ├── model_performance.png

@@ -347,11 +347,11 @@ MAPEOS = {
     'edad_categoria': {'14-18': 0, '19-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
 }
 
+
 def crear_formulario():
-    """Crear formulario interactivo completo"""
+    """Crear formulario interactivo completo - VERSIÓN CORREGIDA"""
     with st.sidebar:
         st.markdown("### FORMULARIO")
-        st.markdown("Modelo **más balanceado** y **menos sesgado** por edad")
         
         with st.form("formulario_estudiante"):
             # ===== SECCIÓN 1: DATOS DEMOGRÁFICOS =====
@@ -359,74 +359,68 @@ def crear_formulario():
             
             col1, col2 = st.columns(2)
             with col1:
-                edad = st.slider("Edad", 14, 70, 25, help="Edad actual del estudiante")
+                edad = st.slider("Edad", 14, 70, 25)
             with col2:
                 sexo = st.selectbox("Sexo", options=list(MAPEOS['sexo'].keys()))
             
             genero = st.selectbox("Género", options=list(MAPEOS['genero'].keys()))
             situacion_conyugal = st.selectbox("Situación conyugal", options=list(MAPEOS['situacion_conyugal'].keys()))
             
-            # ===== SECCIÓN 2: SALUD Y ORIGEN =====
-            st.markdown('<div class="section-header"> Salud y origen</div>', unsafe_allow_html=True)
+            # ===== SECCIÓN 2: SALUD Y ORIGEN ===== (CORREGIDO)
+            st.markdown('<div class="section-header">🏥 Salud y origen</div>', unsafe_allow_html=True)
             
-            col3, col4 = st.columns(2)
-            with col3:
-                discapacidad = st.radio("¿Tiene discapacidad?", options=list(MAPEOS['si_no'].keys()))
-            with col4:
-                indigena = st.radio("¿Se considera indígena?", options=list(MAPEOS['si_no'].keys()))
+            # SOLUCIÓN: Usar selectbox en lugar de radio para mejor compatibilidad
+            discapacidad = st.selectbox("¿Tiene discapacidad?", options=list(MAPEOS['si_no'].keys()))
+            indigena = st.selectbox("¿Se considera indígena?", options=list(MAPEOS['si_no'].keys()))
             
-            # ===== SECCIÓN 3: SITUACIÓN ECONÓMICA =====
-            st.markdown('<div class="section-header"> Situación económica</div>', unsafe_allow_html=True)
-            st.info("💡 **RF Insight**: Los ingresos son 14x más importantes que en otros modelos")
+            # ===== SECCIÓN 3: SITUACIÓN ECONÓMICA ===== (CORREGIDO)
+            st.markdown('<div class="section-header">💰 Situación económica</div>', unsafe_allow_html=True)
             
-            trabaja = st.radio("¿Trabaja actualmente?", options=list(MAPEOS['si_no'].keys()))
+            # SOLUCIÓN: Selectbox en lugar de radio
+            trabaja = st.selectbox("¿Trabaja actualmente?", options=list(MAPEOS['si_no'].keys()))
             
             if trabaja == 'Sí':
-                horas_trabajo = st.slider("Horas de trabajo semanales", 0, 60, 40, 
-                                        help=" Factor clave en Random Forest")
+                horas_trabajo = st.slider("Horas de trabajo semanales", 0, 60, 40)
             else:
                 horas_trabajo = 0
             
             ingresos_hogar = st.select_slider(
-                " Ingresos mensuales del hogar (MXN)",
+                "Ingresos mensuales del hogar (MXN)",
                 options=[3000, 7500, 12500, 17500, 22500, 30000],
                 value=12500,
-                format_func=lambda x: f"${x:,.0f}",
-                help=" Variable muy importante en RF"
+                format_func=lambda x: f"${x:,.0f}"
             )
             
-            beca = st.radio("¿Recibe alguna beca?", options=list(MAPEOS['si_no'].keys()))
+            # SOLUCIÓN: Selectbox en lugar de radio
+            beca = st.selectbox("¿Recibe alguna beca?", options=list(MAPEOS['si_no'].keys()))
             
             # ===== SECCIÓN 4: TRAYECTORIA ACADÉMICA =====
-            st.markdown('<div class="section-header"> Trayectoria académica</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-header">📚 Trayectoria académica</div>', unsafe_allow_html=True)
             
             col5, col6 = st.columns(2)
             with col5:
-                regimen_secundaria = st.radio("Régimen de secundaria", options=list(MAPEOS['regimen_secundaria'].keys()))
+                regimen_secundaria = st.selectbox("Régimen de secundaria", options=list(MAPEOS['regimen_secundaria'].keys()))
             with col6:
-                tipo_secundaria = st.selectbox("Tipo de secundaria", options=list(MAPEOS['tipo_secundaria'].keys()),
-                                             help=" Más importante en RF que en GB")
+                tipo_secundaria = st.selectbox("Tipo de secundaria", options=list(MAPEOS['tipo_secundaria'].keys()))
             
-            estudios_previos = st.radio("¿Tiene estudios previos de bachillerato?", options=list(MAPEOS['si_no'].keys()))
-            cursos_linea = st.radio("¿Ha tomado cursos en línea antes?", options=list(MAPEOS['si_no'].keys()))
+            # SOLUCIÓN: Selectbox en lugar de radio
+            estudios_previos = st.selectbox("¿Tiene estudios previos de bachillerato?", options=list(MAPEOS['si_no'].keys()))
+            cursos_linea = st.selectbox("¿Ha tomado cursos en línea antes?", options=list(MAPEOS['si_no'].keys()))
             
             # ===== SECCIÓN 5: HABILIDADES Y RECURSOS =====
-            st.markdown('<div class="section-header"> Habilidades y recursos</div>', unsafe_allow_html=True)
-            st.success("✅ **RF Advantage**: Mejor balance entre todos los recursos")
+            st.markdown('<div class="section-header">💻 Habilidades y recursos</div>', unsafe_allow_html=True)
             
             col7, col8 = st.columns(2)
             with col7:
-                recursos_tec = st.slider(" Recursos tecnológicos", 1, 5, 3, 
-                                       help=" 4x más importante en RF")
+                recursos_tec = st.slider("Recursos tecnológicos", 1, 5, 3)
             with col8:
-                responsabilidades = st.slider(" Responsabilidades", 1, 7, 3,
-                                            help="Balance trabajo-estudio")
+                responsabilidades = st.slider("Responsabilidades", 1, 7, 3)
             
-            comunicacion = st.select_slider(" Habilidad de comunicación", 
+            comunicacion = st.select_slider("Habilidad de comunicación", 
                                           options=list(MAPEOS['calificacion'].keys()), value="Bueno")
-            evaluacion = st.select_slider(" Habilidad evaluación información", 
+            evaluacion = st.select_slider("Habilidad evaluación información", 
                                         options=list(MAPEOS['calificacion'].keys()), value="Bueno")
-            organizacion = st.select_slider(" Habilidad de organización", 
+            organizacion = st.select_slider("Habilidad de organización", 
                                           options=list(MAPEOS['calificacion'].keys()), value="Bueno")
             
             # Calcular categoría de edad automáticamente
@@ -441,8 +435,8 @@ def crear_formulario():
             else:
                 edad_categoria = '45+'
             
-            # Botón de enviar con estilo RF
-            submitted = st.form_submit_button(" Predecir con Random Forest", use_container_width=True)
+            # Botón de enviar
+            submitted = st.form_submit_button("🎓 Predecir con Random Forest", use_container_width=True)
             
             datos = {
                 'edad': edad, 'sexo': sexo, 'genero': genero, 'situacion_conyugal': situacion_conyugal,
@@ -456,6 +450,7 @@ def crear_formulario():
             }
             
             return submitted, datos
+
 
 def preprocesar_datos(datos):
     """Preprocesar datos para el modelo"""

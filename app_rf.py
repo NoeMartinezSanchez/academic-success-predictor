@@ -303,52 +303,40 @@ st.markdown("""
 
 
 @st.cache_resource
-def cargar_modelo():
+def cargar_modelo_compatible():
     """
-    Función de carga con múltiples estrategias de compatibilidad
+    Carga el modelo entrenado con versión compatible
     """
-    # Intentar diferentes métodos
-    métodos = [
-        cargar_normal,
-        cargar_con_parche, 
-        cargar_con_pickle
-    ]
-    
-    for método in métodos:
-        try:
-            pipeline, metadata = método()
-            if pipeline is not None:
-                return pipeline, metadata
-        except:
-            continue
-    
-    st.error("❌ No se pudo cargar el modelo con ningún método")
-    return None, None
-
-def cargar_normal():
-    """Intenta carga normal"""
-    return joblib.load('modelo_rf_ligero.pkl'), joblib.load('metadatos_rf_ligero.pkl')
-
-def cargar_con_parche():
-    """Intenta con parche de compatibilidad"""
-    class _RemainderColsList(list):
-        pass
-    import sklearn.compose._column_transformer as ct
-    ct._RemainderColsList = _RemainderColsList
-    return joblib.load('modelo_rf_ligero.pkl'), joblib.load('metadatos_rf_ligero.pkl')
-
-def cargar_con_pickle():
-    """Intenta cargar versión pickle si existe"""
     try:
-        import pickle
-        with open('modelo_rf_ligero_pickle.pkl', 'rb') as f:
-            pipeline = pickle.load(f)
-        with open('metadatos_rf_ligero_pickle.pkl', 'rb') as f:
-            metadata = pickle.load(f)
-        return pipeline, metadata
-    except:
+        # Intentar con joblib primero
+        try:
+            pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
+            metadata = joblib.load('metadatos_compatible.joblib')
+            st.sidebar.success("✅ Modelo cargado con joblib")
+            return pipeline, metadata
+        except:
+            # Fallback a pickle
+            with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
+                pipeline = pickle.load(f)
+            with open('metadatos_compatible.pkl', 'rb') as f:
+                metadata = pickle.load(f)
+            st.sidebar.success("✅ Modelo cargado con pickle")
+            return pipeline, metadata
+            
+    except Exception as e:
+        st.error(f"❌ Error cargando modelo compatible: {e}")
+        
+        # Información de diagnóstico
+        st.info("""
+        ℹ️ **Solución:**
+        1. Ejecuta el script de entrenamiento compatible
+        2. Sube los nuevos archivos .joblib o .pkl a GitHub
+        3. Los archivos deben llamarse:
+           - modelo_rf_streamlit_compatible.joblib
+           - metadatos_compatible.joblib
+        """)
+        
         return None, None
-
 
 
 # Mapeos para las variables (iguales que antes)

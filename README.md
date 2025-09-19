@@ -68,9 +68,7 @@ A comprehensive machine learning solution that predicts student success in onlin
 
 ```
 academic-success-predictor/
-├── 📊 data/
-│   ├── datos_sinteticos_prepa_linea_completo.csv
-│   └── processed/
+
 ├── 📓 notebooks/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_feature_engineering.ipynb
@@ -82,7 +80,7 @@ academic-success-predictor/
 ├── 🚀 app/
 │   ├── streamlit_app.py
 │   ├── predictor.py
-│   └── utils/
+│ 
 ├── 📈 results/
 │   ├── model_performance.png
 │   ├── feature_importance.png
@@ -99,9 +97,9 @@ cd academic-success-predictor
 pip install -r requirements.txt
 ```
 
-### Run Web Application
+### Run Web Application on Streamlit Cloud
 ```bash
-streamlit run app/streamlit_app.py
+https://academic-success-predictor-rn9ss8smafjiajw9sx3q8s.streamlit.app/
 ```
 
 ### Jupyter Notebooks
@@ -143,9 +141,8 @@ jupyter notebook notebooks/
 
 Feel free to reach out for collaborations, questions, or suggestions:
 
-- **LinkedIn**: [Your LinkedIn Profile]
-- **Email**: [your.email@domain.com]
-- **Portfolio**: [Your Portfolio Website]
+- **LinkedIn**: https://www.linkedin.com/in/ecotec-data-solutions/
+- **Email**: noe.martinez@ingenieria.unam.edu
 
 ## 📄 License
 

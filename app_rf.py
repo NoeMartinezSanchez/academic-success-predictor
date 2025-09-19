@@ -332,67 +332,116 @@ def cargar_modelo():
         
         # SEGUNDO: Intentar carga con joblib (método preferido)
         try:
-            pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
-            metadata = joblib.load('metadatos_compatible.joblib')
-            
-            # Verificar que el pipeline tiene los métodos necesarios
-            if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
-                st.sidebar.success("✅ Modelo cargado con joblib")
-                return pipeline, metadata
+            if os.path.exists('modelo_rf_streamlit_compatible.joblib'):
+                pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
+                metadata = joblib.load('metadatos_compatible.joblib')
+                
+                # Verificar que el pipeline tiene los métodos necesarios
+                if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
+                    st.sidebar.success("✅ Modelo cargado con joblib")
+                    return pipeline, metadata
+                else:
+                    st.sidebar.error("❌ Modelo no tiene métodos predictivos")
             else:
-                st.sidebar.error("❌ Modelo no tiene métodos predictivos")
+                st.sidebar.warning("⚠️ Archivo joblib no encontrado")
         except Exception as e:
             st.sidebar.warning(f"⚠️ Joblib falló: {str(e)[:100]}...")
         
         # TERCERO: Intentar con pickle
         try:
-            with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
-                pipeline = pickle.load(f)
-            with open('metadatos_compatible.pkl', 'rb') as f:
-                metadata = pickle.load(f)
-            
-            if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
-                st.sidebar.success("✅ Modelo cargado con pickle")
-                return pipeline, metadata
+            if os.path.exists('modelo_rf_streamlit_compatible.pkl'):
+                with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
+                    pipeline = pickle.load(f)
+                with open('metadatos_compatible.pkl', 'rb') as f:
+                    metadata = pickle.load(f)
+                
+                if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
+                    st.sidebar.success("✅ Modelo cargado con pickle")
+                    return pipeline, metadata
+            else:
+                st.sidebar.warning("⚠️ Archivo pickle no encontrado")
         except Exception as e:
             st.sidebar.warning(f"⚠️ Pickle falló: {str(e)[:100]}...")
         
-        # CUARTO: Parche de compatibilidad de último recurso
+        # CUARTO: Buscar cualquier archivo .pkl o .joblib
         try:
-            # Crear clases compatibles manualmente
-            class _RemainderColsList(list):
-                pass
+            # Buscar cualquier archivo de modelo en el directorio
+            for archivo in os.listdir('.'):
+                if archivo.endswith('.joblib') or archivo.endswith('.pkl'):
+                    if 'modelo' in archivo.lower():
+                        try:
+                            if archivo.endswith('.joblib'):
+                                pipeline = joblib.load(archivo)
+                            else:
+                                with open(archivo, 'rb') as f:
+                                    pipeline = pickle.load(f)
+                            
+                            if hasattr(pipeline, 'predict'):
+                                st.sidebar.success(f"✅ Modelo cargado desde: {archivo}")
+                                return pipeline, {}
+                        except:
+                            continue
+        except:
+            pass
             
-            # Inyectar en los módulos necesarios
-            import sklearn.compose._column_transformer as ct
-            ct._RemainderColsList = _RemainderColsList
-            
-            # Intentar carga again
-            pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
-            metadata = joblib.load('metadatos_compatible.joblib')
-            
-            st.sidebar.success("✅ Modelo cargado con parche de compatibilidad")
-            return pipeline, metadata
-            
-        except Exception as e:
-            st.sidebar.error(f"❌ Parche falló: {str(e)[:100]}...")
+        # Si todo falla
+        st.error("❌ No se encontró ningún modelo válido")
+        return None, None
     
     except Exception as e:
         st.error(f"❌ Error crítico en carga: {str(e)}")
-    
-    # Si todo falla, mostrar ayuda
-    st.error("""
-    🚨 **No se pudo cargar el modelo**. Por favor:
-    
-    1. **Verifica** que los archivos están en el repositorio
-    2. **Asegúrate** de que se llaman exactamente:
-       - `modelo_rf_streamlit_compatible.joblib`
-       - `metadatos_compatible.joblib`
-    3. **Revisa** que los archivos no estén corruptos
-    """)
-    
-    return None, None
+        return None, None
 
+# Función para verificar archivos en el sidebar
+def verificar_archivos_modelo():
+    """
+    Verifica qué archivos hay en el directorio
+    """
+    st.sidebar.subheader("🔍 Archivos en el directorio")
+    
+    try:
+        archivos = os.listdir('.')
+        modelos = [f for f in archivos if f.endswith(('.pkl', '.joblib'))]
+        
+        if modelos:
+            for modelo in modelos:
+                tamaño = os.path.getsize(modelo) / (1024 * 1024)
+                st.sidebar.write(f"📦 {modelo}: {tamaño:.1f} MB")
+        else:
+            st.sidebar.error("❌ No hay archivos .pkl o .joblib")
+            
+    except Exception as e:
+        st.sidebar.error(f"❌ Error listando archivos: {e}")
+
+# Función principal
+def main():
+    """Función principal"""
+    # Verificar archivos primero
+    verificar_archivos_modelo()
+    
+    # Cargar modelo
+    pipeline, metadata = cargar_modelo()
+    
+    if pipeline is None:
+        # Mostrar ayuda específica
+        st.error("""
+        🚨 **No se pudo cargar ningún modelo**
+        
+        **¿Subiste los archivos correctamente?**
+        
+        1. **Ve a tu repositorio en GitHub**
+        2. **Verifica** que los archivos están subidos
+        3. **Los nombres deben ser exactos:**
+           - `modelo_rf_streamlit_compatible.joblib`
+           - `metadatos_compatible.joblib`
+        
+        **Si usaste otros nombres**, actualiza la función `cargar_modelo()`
+        """)
+        return
+    
+    # Si se cargó exitosamente, continuar con tu aplicación
+    st.success(f"✅ Modelo cargado: {type(pipeline).__name__}")
+    
 
 
 # Mapeos para las variables (iguales que antes)

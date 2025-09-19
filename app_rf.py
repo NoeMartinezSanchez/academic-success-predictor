@@ -308,52 +308,29 @@ Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y ba
 
 @st.cache_resource
 def cargar_modelo():
-    """
-    Función de carga robusta con workaround de compatibilidad
-    """
     try:
-        # WORKAROUND PARA COMPATIBILIDAD - Esto resuelve el error
+        # Workaround para compatibilidad
         try:
-            # Intentar importar la clase faltante
+            # Intentar importar y parchear la clase faltante
             from sklearn.compose._column_transformer import _RemainderColsList
         except ImportError:
             # Si no existe, crearla dinámicamente
             class _RemainderColsList(list):
-                def __init__(self, *args, **kwargs):
-                    super().__init__(*args, **kwargs)
+                pass
             
-            # Inyectar la clase en el módulo
             import sklearn.compose._column_transformer
             sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
-            
-            # También en ColumnTransformer por si acaso
-            from sklearn.compose import ColumnTransformer
-            ColumnTransformer._RemainderColsList = _RemainderColsList
         
-        # AHORA intentar cargar el modelo
+        # Ahora intentar cargar el modelo
         if os.path.exists('modelo_rf_streamlit_compatible.joblib'):
             pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
             metadata = joblib.load('metadatos_compatible.joblib')
+            st.sidebar.success("✅ Modelo cargado con workaround")
+            return pipeline, metadata
             
-            if hasattr(pipeline, 'predict'):
-                st.sidebar.success("✅ Modelo cargado con workaround de compatibilidad")
-                return pipeline, metadata
-        
-        # Si joblib falla, intentar con pickle
-        if os.path.exists('modelo_rf_streamlit_compatible.pkl'):
-            with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
-                pipeline = pickle.load(f)
-            with open('metadatos_compatible.pkl', 'rb') as f:
-                metadata = pickle.load(f)
-            
-            if hasattr(pipeline, 'predict'):
-                st.sidebar.success("✅ Modelo cargado con pickle")
-                return pipeline, metadata
-                
     except Exception as e:
-        st.error(f"❌ Error en carga: {str(e)}")
-    
-    return None, None
+        st.error(f"❌ Error: {str(e)}")
+        return None, None
 
 
 

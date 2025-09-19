@@ -8,6 +8,7 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 import pickle
+import os
 
 # Configuración de la página
 st.set_page_config(

@@ -794,7 +794,7 @@ def main():
         with col2:
             st.metric("📊 Accuracy", f"{metadata['accuracy']:.3f}")
         with col3:
-            st.metric("🌲 Estimadores", metadata['parametros_optimizados'].get('n_estimators', 'N/A'))
+            st.metric("🌲 Estimadores", metadata['parametros'].get('n_estimators', 'N/A'))
     
     # Crear formulario en sidebar
     submitted, datos_usuario = crear_formulario()

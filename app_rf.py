@@ -308,142 +308,60 @@ Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y ba
 
 @st.cache_resource
 def cargar_modelo():
-    """
-    Función de carga robusta con diagnóstico completo
-    """
     try:
-        # PRIMERO: Verificar que los archivos existen
-        archivos_necesarios = [
-            'modelo_rf_streamlit_compatible.joblib',
-            'metadatos_compatible.joblib',
-            'modelo_rf_streamlit_compatible.pkl',
-            'metadatos_compatible.pkl'
-        ]
-        
-        archivos_existentes = []
-        for archivo in archivos_necesarios:
-            if os.path.exists(archivo):
-                tamaño = os.path.getsize(archivo) / (1024 * 1024)
-                archivos_existentes.append(f"{archivo} ({tamaño:.1f} MB)")
-            else:
-                archivos_existentes.append(f"{archivo} ❌ NO EXISTE")
-        
-        st.sidebar.info("📁 Archivos encontrados:")
-        for archivo_info in archivos_existentes:
-            st.sidebar.write(f"   {archivo_info}")
-        
-        # SEGUNDO: Intentar carga con joblib (método preferido)
+        # PRIMERO: Intentar con la versión actual
         try:
             if os.path.exists('modelo_rf_streamlit_compatible.joblib'):
                 pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
                 metadata = joblib.load('metadatos_compatible.joblib')
-                
-                # Verificar que el pipeline tiene los métodos necesarios
-                if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
+                if hasattr(pipeline, 'predict'):
                     st.sidebar.success("✅ Modelo cargado con joblib")
                     return pipeline, metadata
-                else:
-                    st.sidebar.error("❌ Modelo no tiene métodos predictivos")
-            else:
-                st.sidebar.warning("⚠️ Archivo joblib no encontrado")
-        except Exception as e:
-            st.sidebar.warning(f"⚠️ Joblib falló: {str(e)[:100]}...")
-        
-        # TERCERO: Intentar con pickle
-        try:
-            if os.path.exists('modelo_rf_streamlit_compatible.pkl'):
-                with open('modelo_rf_streamlit_compatible.pkl', 'rb') as f:
-                    pipeline = pickle.load(f)
-                with open('metadatos_compatible.pkl', 'rb') as f:
-                    metadata = pickle.load(f)
+        except AttributeError as e:
+            st.sidebar.warning(f"⚠️ Error de compatibilidad: {str(e)[:100]}...")
+            
+            # INTENTAR CARGA CON COMPATIBILIDAD
+            try:
+                import sklearn
+                st.sidebar.info(f"Versión scikit-learn: {sklearn.__version__}")
                 
-                if hasattr(pipeline, 'predict') and hasattr(pipeline, 'predict_proba'):
-                    st.sidebar.success("✅ Modelo cargado con pickle")
+                # Forzar compatibilidad
+                from sklearn.compose import ColumnTransformer
+                import sklearn.compose._column_transformer
+                
+                # Agregar el atributo faltante dinámicamente
+                if not hasattr(sklearn.compose._column_transformer, '_RemainderColsList'):
+                    class _RemainderColsList(list):
+                        pass
+                    sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+                
+                # Intentar carga nuevamente
+                pipeline = joblib.load('modelo_rf_streamlit_compatible.joblib')
+                metadata = joblib.load('metadatos_compatible.joblib')
+                
+                if hasattr(pipeline, 'predict'):
+                    st.sidebar.success("✅ Modelo cargado con compatibilidad forzada")
                     return pipeline, metadata
-            else:
-                st.sidebar.warning("⚠️ Archivo pickle no encontrado")
-        except Exception as e:
-            st.sidebar.warning(f"⚠️ Pickle falló: {str(e)[:100]}...")
+                    
+            except Exception as compat_error:
+                st.sidebar.error(f"❌ Error en compatibilidad: {compat_error}")
         
-        # CUARTO: Buscar cualquier archivo .pkl o .joblib
-        try:
-            # Buscar cualquier archivo de modelo en el directorio
-            for archivo in os.listdir('.'):
-                if archivo.endswith('.joblib') or archivo.endswith('.pkl'):
-                    if 'modelo' in archivo.lower():
-                        try:
-                            if archivo.endswith('.joblib'):
-                                pipeline = joblib.load(archivo)
-                            else:
-                                with open(archivo, 'rb') as f:
-                                    pipeline = pickle.load(f)
-                            
-                            if hasattr(pipeline, 'predict'):
-                                st.sidebar.success(f"✅ Modelo cargado desde: {archivo}")
-                                return pipeline, {}
-                        except:
-                            continue
-        except:
-            pass
-            
-        # Si todo falla
-        st.error("❌ No se encontró ningún modelo válido")
-        return None, None
-    
-    except Exception as e:
-        st.error(f"❌ Error crítico en carga: {str(e)}")
-        return None, None
-
-# Función para verificar archivos en el sidebar
-def verificar_archivos_modelo():
-    """
-    Verifica qué archivos hay en el directorio
-    """
-    st.sidebar.subheader("🔍 Archivos en el directorio")
-    
-    try:
-        archivos = os.listdir('.')
-        modelos = [f for f in archivos if f.endswith(('.pkl', '.joblib'))]
-        
-        if modelos:
-            for modelo in modelos:
-                tamaño = os.path.getsize(modelo) / (1024 * 1024)
-                st.sidebar.write(f"📦 {modelo}: {tamaño:.1f} MB")
-        else:
-            st.sidebar.error("❌ No hay archivos .pkl o .joblib")
-            
-    except Exception as e:
-        st.sidebar.error(f"❌ Error listando archivos: {e}")
-
-# Función principal
-def main():
-    """Función principal"""
-    # Verificar archivos primero
-    verificar_archivos_modelo()
-    
-    # Cargar modelo
-    pipeline, metadata = cargar_modelo()
-    
-    if pipeline is None:
-        # Mostrar ayuda específica
+        # Si todo falla, mostrar ayuda
         st.error("""
-        🚨 **No se pudo cargar ningún modelo**
+        🚨 **Error de compatibilidad de scikit-learn**
         
-        **¿Subiste los archivos correctamente?**
-        
-        1. **Ve a tu repositorio en GitHub**
-        2. **Verifica** que los archivos están subidos
-        3. **Los nombres deben ser exactos:**
-           - `modelo_rf_streamlit_compatible.joblib`
-           - `metadatos_compatible.joblib`
-        
-        **Si usaste otros nombres**, actualiza la función `cargar_modelo()`
+        **Solución:**
+        1. **Reentrena el modelo** con scikit-learn==1.5.2
+        2. **O actualiza requirements.txt** con la versión exacta
+        3. **O descarga el modelo** desde tu entorno local nuevamente
         """)
-        return
-    
-    # Si se cargó exitosamente, continuar con tu aplicación
-    st.success(f"✅ Modelo cargado: {type(pipeline).__name__}")
-    
+        
+        return None, None
+        
+    except Exception as e:
+        st.error(f"❌ Error crítico: {str(e)}")
+        return None, None
+        
 
 
 # Mapeos para las variables (iguales que antes)

@@ -826,12 +826,12 @@ def main():
                 st.write(f"**🎯 Accuracy:** {metadata['accuracy']:.4f}")
                 
                 # Parámetros del modelo
-                st.write("**⚙️ Parámetros optimizados:**")
+                st.write("**⚙️ Parámetros:**")
                 params_importantes = {
-                    'n_estimators': metadata['parametros_optimizados'].get('n_estimators'),
-                    'max_depth': metadata['parametros_optimizados'].get('max_depth'),
-                    'max_features': metadata['parametros_optimizados'].get('max_features'),
-                    'bootstrap': metadata['parametros_optimizados'].get('bootstrap'),
+                    'n_estimators': metadata['parametros'].get('n_estimators'),
+                    'max_depth': metadata['parametros'].get('max_depth'),
+                    'max_features': metadata['parametros'].get('max_features'),
+                    'bootstrap': metadata['parametros'].get('bootstrap'),
                 }
                 st.json(params_importantes)
                 

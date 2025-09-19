@@ -18,61 +18,145 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS personalizados (optimizado para fondo negro/oscuro)
+# Estilos CSS universales compatibles con todos los navegadores
 st.markdown("""
 <style>
+    /* ===== VARIABLES DE COLOR (FUNCIONAN EN CLARO/OSCURO) ===== */
+    :root {
+        --primary-color: #2563eb;       /* Azul profesional */
+        --primary-light: #3b82f6;
+        --primary-dark: #1d4ed8;
+        --success-color: #059669;       /* Verde éxito */
+        --warning-color: #d97706;       /* Amarillo advertencia */
+        --danger-color: #dc2626;        /* Rojo peligro */
+        --text-primary: #1f2937;        /* Texto oscuro */
+        --text-secondary: #4b5563;      /* Texto secundario */
+        --bg-light: #f8fafc;            /* Fondo claro */
+        --bg-card: #ffffff;             /* Fondo tarjetas */
+        --border-color: #e5e7eb;        /* Bordes suaves */
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ===== ESTILOS BASE UNIVERSALES ===== */
+    .stApp {
+        background-color: var(--bg-light) !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .stMarkdown, .stText, .stWrite {
+        color: var(--text-primary) !important;
+        line-height: 1.6;
+    }
+
+    /* ===== HEADERS Y TÍTULOS ===== */
     .main-header {
-        font-size: 3rem;
-        color: #A5D6A7;
+        font-size: 2.5rem;
+        color: var(--primary-color) !important;
         text-align: center;
-        margin-bottom: 2rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        font-weight: bold;
-        background: rgba(255,255,255,0.05);
-        padding: 1rem;
-        border-radius: 15px;
-    }
-    
-    .section-header {
-        font-size: 1.5rem;
-        color: #81C784;
-        border-bottom: 3px solid #4CAF50;
-        padding-bottom: 0.5rem;
-        margin-top: 2rem;
+        margin-bottom: 1.5rem;
         font-weight: 700;
-        background: rgba(255,255,255,0.05);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         padding: 1rem;
-        border-radius: 8px;
     }
-    
-    .metric-card {
-        background: rgba(76, 175, 80, 0.15);
-        border: 1px solid #4CAF50;
-        padding: 1.5rem;
-        border-radius: 15px;
-        border-left: 5px solid #66BB6A;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
-        color: #E8F5E8 !important;
+
+    .section-header {
+        font-size: 1.4rem;
+        color: var(--primary-color) !important;
+        border-bottom: 2px solid var(--primary-light);
+        padding-bottom: 0.5rem;
+        margin: 1.5rem 0 1rem 0;
         font-weight: 600;
-        backdrop-filter: blur(5px);
     }
-    
+
+    /* ===== COMPONENTES DE LA APLICACIÓN ===== */
+    .metric-card {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid var(--primary-color);
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow);
+        color: var(--text-primary) !important;
+    }
+
     .recommendation-box {
-        background: rgba(139, 195, 74, 0.2) !important;
-        border: 2px solid #8BC34A !important;
-        padding: 1.8rem !important;
-        border-radius: 12px !important;
-        border-left: 6px solid #AED581 !important;
-        margin: 1rem 0 !important;
-        box-shadow: 0 6px 12px rgba(139, 195, 74, 0.4) !important;
-        color: #F1F8E9 !important;
-        font-size: 1.1rem !important;
-        line-height: 1.7 !important;
-        font-weight: 600 !important;
-        backdrop-filter: blur(8px) !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid var(--success-color);
+        margin: 1rem 0;
+        box-shadow: var(--shadow);
     }
-    
+
+    .risk-high { 
+        background: #fef2f2 !important;
+        border: 1px solid #fecaca !important;
+        border-left: 4px solid var(--danger-color) !important;
+    }
+
+    .risk-medium { 
+        background: #fffbeb !important;
+        border: 1px solid #fed7aa !important;
+        border-left: 4px solid var(--warning-color) !important;
+    }
+
+    .risk-low { 
+        background: #f0fdf4 !important;
+        border: 1px solid #bbf7d0 !important;
+        border-left: 4px solid var(--success-color) !important;
+    }
+
+    /* ===== BADGES Y ELEMENTOS ESPECIALES ===== */
+    .rf-badge {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white !important;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        box-shadow: var(--shadow);
+        border: none;
+        display: inline-block;
+        margin: 0.5rem 0;
+    }
+
+    .feature-importance-box {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        box-shadow: var(--shadow);
+    }
+
+    /* ===== SIDEBAR (COMPATIBLE CON MODO CLARO/OSCURO) ===== */
+    .css-1d391kg, .css-1y4p8pa {
+        background-color: var(--bg-card) !important;
+        border-right: 1px solid var(--border-color) !important;
+    }
+
+    .css-1d391kg p, .css-1y4p8pa p, 
+    .css-1d391kg label, .css-1y4p8pa label,
+    .css-1d391kg .stMarkdown, .css-1y4p8pa .stMarkdown {
+        color: var(--text-primary) !important;
+    }
+
+    /* ===== FORMULARIOS Y CONTROLES ===== */
+    .stSelectbox, .stSlider, .stRadio, .stNumberInput {
+        background-color: var(--bg-card) !important;
+    }
+
+    .stSelectbox div, .stSlider div, .stRadio div {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* ===== TEXTO Y TIPOGRAFÍA ===== */
     .recommendation-box h1,
     .recommendation-box h2,
     .recommendation-box h3,
@@ -82,225 +166,143 @@ st.markdown("""
     .recommendation-box p,
     .recommendation-box li,
     .recommendation-box span,
-    .recommendation-box div,
-    .recommendation-box ul,
-    .recommendation-box ol {
-        color: #F1F8E9 !important;
-        font-weight: 600 !important;
+    .recommendation-box div {
+        color: var(--text-primary) !important;
     }
-    
+
     .recommendation-box strong,
     .recommendation-box b {
-        color: #DCEDC8 !important;
-        font-weight: 800 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        color: var(--primary-color) !important;
     }
-    
-    .risk-high { 
-        background: rgba(244, 67, 54, 0.2) !important;
-        border: 2px solid #F44336 !important;
-        border-left: 6px solid #EF5350 !important;
-        color: #FFEBEE !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    
-    .risk-high h1,
-    .risk-high h2,
-    .risk-high h3,
-    .risk-high h4,
-    .risk-high h5,
-    .risk-high h6,
-    .risk-high p,
-    .risk-high li,
-    .risk-high span,
-    .risk-high div,
-    .risk-high ul,
-    .risk-high ol {
-        color: #FFCDD2 !important;
-        font-weight: 700 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-    }
-    
-    .risk-medium { 
-        background: rgba(255, 152, 0, 0.2) !important;
-        border: 2px solid #FF9800 !important;
-        border-left: 6px solid #FFB74D !important;
-        color: #FFF8E1 !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    
-    .risk-medium h1,
-    .risk-medium h2,
-    .risk-medium h3,
-    .risk-medium h4,
-    .risk-medium h5,
-    .risk-medium h6,
-    .risk-medium p,
-    .risk-medium li,
-    .risk-medium span,
-    .risk-medium div,
-    .risk-medium ul,
-    .risk-medium ol {
-        color: #FFECB3 !important;
-        font-weight: 700 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-    }
-    
-    .risk-low { 
-        background: rgba(76, 175, 80, 0.2) !important;
-        border: 2px solid #4CAF50 !important;
-        border-left: 6px solid #66BB6A !important;
-        color: #E8F5E8 !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    
-    .risk-low h1,
-    .risk-low h2,
-    .risk-low h3,
-    .risk-low h4,
-    .risk-low h5,
-    .risk-low h6,
-    .risk-low p,
-    .risk-low li,
-    .risk-low span,
-    .risk-low div,
-    .risk-low ul,
-    .risk-low ol {
-        color: #C8E6C9 !important;
-        font-weight: 600 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
-    
-    .rf-badge {
-        background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-        color: #000000;
-        padding: 0.5rem 1.2rem;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        font-weight: 800;
-        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
-        border: 1px solid #81C784;
-        text-shadow: none;
-    }
-    
-    .feature-importance-box {
-        background: rgba(139, 195, 74, 0.18) !important;
-        border: 2px solid #8BC34A !important;
-        padding: 1.8rem !important;
-        border-radius: 12px !important;
-        border-left: 6px solid #AED581 !important;
-        margin: 1rem 0 !important;
-        box-shadow: 0 5px 10px rgba(139, 195, 74, 0.35) !important;
-        color: #F1F8E9 !important;
-        font-weight: 600 !important;
-        font-size: 1.05rem !important;
-        line-height: 1.6 !important;
-        backdrop-filter: blur(8px) !important;
-    }
-    
-    .feature-importance-box h1,
-    .feature-importance-box h2,
-    .feature-importance-box h3,
-    .feature-importance-box h4,
-    .feature-importance-box h5,
-    .feature-importance-box h6,
-    .feature-importance-box p,
-    .feature-importance-box li,
-    .feature-importance-box span,
-    .feature-importance-box div,
-    .feature-importance-box ul,
-    .feature-importance-box ol {
-        color: #E8F5E8 !important;
-        font-weight: 600 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
-    
-    /* Estilos generales para fondo oscuro */
-    .stApp {
-        background-color: #121212;
-    }
-    
-    .stMarkdown {
-        color: #E0E0E0 !important;
-    }
-    
-    /* Mejora para bullets y listas en fondo oscuro */
-    ul, ol {
-        color: #E8F5E8 !important;
-        font-weight: 600 !important;
-        line-height: 1.7;
-    }
-    
-    li {
-        margin-bottom: 0.6rem;
-        color: #E8F5E8 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Mejora para textos en general en fondo oscuro */
-    p {
-        color: #E0E0E0 !important;
-        font-weight: 500 !important;
-        line-height: 1.7;
-    }
-    
-    /* Asegurar que todos los elementos mantengan colores claros */
-    .recommendation-box * {
-        color: #F1F8E9 !important;
-    }
-    
-    .feature-importance-box * {
-        color: #E8F5E8 !important;
-    }
-    
-    .metric-card * {
-        color: #E8F5E8 !important;
-    }
-    
-    /* Selectores adicionales para máxima compatibilidad */
-    .recommendation-box > * {
-        color: #F1F8E9 !important;
-        font-weight: 600 !important;
-    }
-    
-    .feature-importance-box > * {
-        color: #E8F5E8 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Efectos de hover para mejor interactividad */
-    .recommendation-box:hover {
-        box-shadow: 0 8px 16px rgba(139, 195, 74, 0.5) !important;
-        transform: translateY(-2px);
-        transition: all 0.3s ease;
-    }
-    
+
+    /* ===== EFECTOS HOVER ===== */
     .metric-card:hover {
-        box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
-        transform: translateY(-1px);
-        transition: all 0.3s ease;
-    }
-    
-    .feature-importance-box:hover {
-        box-shadow: 0 7px 14px rgba(139, 195, 74, 0.45) !important;
         transform: translateY(-2px);
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
     }
+
+    .recommendation-box:hover {
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+        }
+        
+        .section-header {
+            font-size: 1.2rem;
+        }
+        
+        .metric-card {
+            padding: 1rem;
+        }
+    }
+
+    /* ===== ESTILOS ESPECÍFICOS PARA STREAMLIT ===== */
+    .stButton button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .stButton button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    /* ===== SCROLLBAR PERSONALIZADO ===== */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-light);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-light);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-color);
+    }
+
+    /* ===== ESTILOS PARA TABLAS ===== */
+    .stDataFrame, .stTable {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+
+    /* ===== ESTILOS PARA EXPANDERS ===== */
+    .streamlit-expanderHeader {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px;
+    }
+
+    /* ===== CORRECCIÓN PARA TEXTO EN SIDEBAR ===== */
+    .css-1y4p8pa .stMarkdown {
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+    }
+
+    .css-1y4p8pa .stRadio label {
+        color: var(--text-primary) !important;
+    }
+
+    /* ===== CONTRASTE MEJORADO PARA ACCESIBILIDAD ===== */
+    .stAlert {
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .stSuccess {
+        background-color: #f0fdf4 !important;
+        border-left: 4px solid var(--success-color) !important;
+    }
+
+    .stWarning {
+        background-color: #fffbeb !important;
+        border-left: 4px solid var(--warning-color) !important;
+    }
+
+    .stError {
+        background-color: #fef2f2 !important;
+        border-left: 4px solid var(--danger-color) !important;
+    }
+
+    /* ===== ICONOS Y ELEMENTOS GRÁFICOS ===== */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
 # Título principal con badge RF
 st.markdown("""
 <div style="text-align: center;">
-    <h1 class="main-header"> PREDICTOR DE ÉXITO ACADÉMICO EN EDUCACIÓN EN LINEA</h1>
-    <span class="rf-badge">Random forest optimizado</span>
+    <h1 class="main-header">PREDICTOR DE ÉXITO ACADÉMICO EN EDUCACIÓN EN LÍNEA</h1>
+    <span class="rf-badge">Random Forest Optimizado</span>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 **Sistema inteligente mejorado** que predice la probabilidad de éxito en educación en línea con **Random Forest optimizado**.
-  Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
+Precisión del **89.8%** | ROC-AUC de **0.898** | Modelo más interpretable y balanceado
 """)
+
 
 
 

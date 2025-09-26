@@ -79,11 +79,12 @@ academic-success-predictor/
 │   └── modelo_rf_streamlit_compatible.pkl
 ├── 🚀 app/
 │   ├── app_rf.py
-│ 
-├── 📈 results/
-│   ├── model_performance.png
-│   ├── feature_importance.png
-│   └── confusion_matrix.png
+├── 📈 images/
+│   ├── distribuciones_categoricas_detalladas.png
+│   ├── histogramas_numericos.png
+│   └── distribucion_de_variables_numericas.png
+│   └── matriz_correlacion_detallada.png
+│   └── calificacion_final_exito_academico.png
 └── 📋 requirements.txt
 ```
 
